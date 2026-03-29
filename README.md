@@ -257,8 +257,8 @@ simcorrect/
 **Shreya Priya** — Robotics & Autonomy Engineer
 Divergence detection, parameter identification, correction loop, simulation pipeline
 
-**Dean Hu** — Founder, CAID Technologies
-OpenCAD parametric CAD engine, geometry rebuild, STL export pipeline
+**Dean Hu** — Founder, Caid Technologies
+OpenCAD
 
 ---
 
