@@ -1,4 +1,4 @@
-# SimCorrect: Autonomous Geometric Fault Detection and CAD Correction for Sim-to-Real Gap Closure
+# SimCorrect: Geometric Fault Detection and CAD Correction for Sim-to-Real Gap Closure
 
 **Shreya Priya, Dean Hu**
 
