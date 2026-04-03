@@ -101,7 +101,7 @@ The corrected simulation re-executes the task under the same joint commands. Suc
                                  ▼
              ┌────────────────────────────────────┐
              │           OpenCAD API              │
-             │       (CAID Technologies)          │
+             │                                    │
              │                                    │
              │  • Parametric geometry rebuild     │
              │  • STL / MJCF export               │
