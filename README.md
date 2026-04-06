@@ -7,7 +7,6 @@
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 ![Status](https://img.shields.io/badge/Status-Active%20Development-orange.svg)
 
-[[Video — Problem 1]](#) &nbsp;|&nbsp; [[OpenCAD]](https://github.com/caid-technologies/OpenCAD)
 
 ---
 
