@@ -235,9 +235,3 @@ Divergence detection, parameter identification, correction loop, simulation pipe
 
 **Dean (Dien) Hu** — Founder, Caid Technologies
 OpenCAD AI-native parametric CAD, geometry rebuild, STL/STEP export pipeline
-
----
-
-## License
-
-This project is licensed under the MIT License.
