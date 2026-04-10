@@ -1,0 +1,35 @@
+name: Set Repository Topics
+
+on:
+  workflow_dispatch:
+
+permissions:
+  administration: write
+
+jobs:
+  set-topics:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set repository topics
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.repos.replaceAllTopics({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              names: [
+                "robotics",
+                "simulation",
+                "mujoco",
+                "sim-to-real",
+                "cad",
+                "python",
+                "robot-manipulation",
+                "pick-and-place",
+                "parametric-cad",
+                "robot-learning",
+                "geometric-fault-detection",
+                "sim-to-real-gap"
+              ]
+            });
+            console.log("Repository topics set successfully.");
