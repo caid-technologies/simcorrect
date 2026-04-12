@@ -266,7 +266,7 @@ def draw_degradation_panel(ov,t):
         ov.rectangle([(bar_x,y),(bar_x+bar_w,y+bar_h)],fill=(15,15,30,220),outline=(50,50,80,180),width=1)
         fw=int(bar_w*lvl)
         if fw>0:
-            ri=min(255,int(80+175*lvl)); gi=max(0,int(200*(1-lvl*0.9))); bi=max(0,int(80*(1-lvl)))
+            ri=max(40,int(120*(1-lvl*0.5))); gi=max(80,int(160*(1-lvl*0.3))); bi=min(255,int(140+115*lvl))
             ov.rectangle([(bar_x,y),(bar_x+fw,y+bar_h)],fill=(ri,gi,bi,230))
         pct_x=bar_x+bar_w+8
         ov.rectangle([(pct_x-2,y),(pct_x+38,y+bar_h)],fill=(8,8,20,200))
@@ -316,7 +316,7 @@ def overlay(raw,t,phase,grasp_l,grasp_r,deg):
     ov.text((18,8),"GROUND TRUTH  (Healthy)",font=fnt(26,True),fill=(70,220,108))
     ov.text((18,50),f"Friction: {NOMINAL_FRICTION} Nm  |  Damping: {NOMINAL_DAMPING} Ns/m  -- nominal",font=fnt(15),fill=(58,168,86))
     if phase==1:
-        red=min(255,int(32+200*deg))
+        red=min(140,int(32+108*deg))
         ov.rectangle([(hw,0),(W,88)],fill=(red,4,4,255))
         cur_f=NOMINAL_FRICTION+(FAULTY_FRICTION-NOMINAL_FRICTION)*deg
         pct=int((cur_f/NOMINAL_FRICTION-1)*100)
