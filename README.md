@@ -1,237 +1,404 @@
-# SimCorrect
+# CadIntel — CAD AI/ML Printability Assistant
 
-**Shreya Priya, Dean (Dien) Hu**
-
-![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)
-![MuJoCo](https://img.shields.io/badge/MuJoCo-3.x-green.svg)
-![License](https://img.shields.io/badge/License-MIT-yellow.svg)
-![Status](https://img.shields.io/badge/Status-Active%20Development-orange.svg)
-
+A two-stage AI/ML pipeline that analyses CAD drawings for 3D printability. It classifies drawings as **PASS / REVIEW / FAIL** (POI1), diagnoses the specific defect type (POI2), suggests actionable fixes, and presents everything in an interactive Streamlit demo with annotated overlays and repaired outputs.
 
 ---
 
-## Overview
+## Project Structure
 
-SimCorrect is a fully automated pipeline for detecting, isolating, and correcting geometric faults in robot CAD models that cause sim-to-real performance gaps. Two simulation instances run side by side under identical joint commands — one with ground-truth geometry, one with an injected geometric fault. SimCorrect identifies the faulty CAD parameter, corrects it programmatically via the OpenCAD API, reloads the simulation, and verifies task success. No human intervention. No real-world hardware. No additional data collection.
-
----
-
-## Background and Motivation
-
-Simulation is central to modern robot development. Training and validating robot policies in simulation before real-world deployment reduces cost, accelerates iteration, and improves safety. However, the sim-to-real gap — the performance difference between a simulated and physically deployed robot — remains one of the most studied challenges in robotics.
-
-Existing approaches to closing this gap address dynamics discrepancies (friction, mass, contact forces) through domain randomization and system identification, and perceptual discrepancies (visual appearance, lighting, sensor response) through domain adaptation and real-to-sim rendering pipelines.
-
-A third class of gap has received considerably less systematic attention: **the geometric gap** — discrepancies between a robot's CAD model and its physical geometry, arising from manufacturing tolerances, part substitutions, assembly errors, and model drift over time.
-
-The 2025 Annual Review of Control, Robotics, and Autonomous Systems (Aljalbout et al.) identifies this directly: robot simulations based on CAD files "simplify or omit important physical details," and real-world factors including manufacturing tolerances and mechanical backlash "are rarely modeled" and "can cause self-collisions, unstable motions, or failed task execution."
-
-Unlike dynamics gaps, geometric gaps are deterministic. A link that is 37% shorter than its CAD specification produces the same end-effector error at every execution of the same joint command. This determinism makes geometric faults both highly tractable and, without a dedicated correction mechanism, highly damaging — a policy trained against a geometrically incorrect simulation will fail in the real world in a consistent, reproducible way.
-
-SimCorrect addresses this gap directly.
-
----
-
-## How SimCorrect Works
-
-The pipeline operates in four stages:
-
-### Stage 1 — Behavioral Divergence Detection
-
-Two simulation instances run concurrently under identical joint commands. The reference instance uses ground-truth CAD geometry. The faulty instance carries an injected geometric fault. SimCorrect monitors end-effector trajectories and task outcomes in real time. When the faulty arm fails a task that the reference arm completes, divergence is flagged and the correction pipeline begins.
-
-### Stage 2 — Geometric Parameter Identification
-
-Sensitivity analysis traces the detected divergence to its source CAD parameter. Because geometric faults produce deterministic, reproducible end-effector errors, SimCorrect isolates the exact dimension responsible — link length, joint offset, structural profile — without requiring real-world observations. The fault is a specific incorrect value in a specific CAD file.
-
-### Stage 3 — Autonomous Correction via OpenCAD
-
-The identified parameter is corrected programmatically through the **OpenCAD API** — AI-native parametric CAD by Caid Technologies. OpenCAD rebuilds the affected geometry from first principles, exports the corrected file, and reloads the simulation:
-```python
-from opencad import Part, Sketch
-
-# Correcting a forearm link 37% too short
-Part('forearm').extrude(
-    Sketch().circle(r=0.028),
-    depth=0.38
-).export('forearm.stl')
-
-sim.reload('forearm.stl')
+```
+cad_intel/
+├── code/                          # POI1 training pipeline
+│   ├── poi2/                      # POI2 labeling + training scripts
+│   ├── dxf_feature_extractor.py
+│   ├── dxf_to_mesh.py
+│   ├── enrich_labels.py
+│   ├── label_from_rules_v2.py
+│   ├── make_labels.py
+│   ├── model_def.py
+│   ├── poi1_dataloader.py
+│   ├── poi1_extra_checks_with_standards.py
+│   ├── read_meta.py
+│   ├── rules_loader.py
+│   ├── sanity_check.sh
+│   ├── split.py
+│   ├── test_pipeline_one.py
+│   ├── train_master.py
+│   ├── train_master_progress.py
+│   └── validate_pairs.py
+├── dataset/
+│   ├── triview_20K/               # 27K CAD samples (images + DXF)
+│   └── labels.csv
+├── rules/
+│   ├── triview_rules_v1_0.yaml    # POI1 ruleset (7 manufacturing profiles)
+│   ├── defects_po2_v1.yaml        # POI2 defect category rules
+│   └── fix_map.yaml               # Rule → fix action mapping
+├── runs/                          # Training checkpoints
+│   ├── exp_001/
+│   ├── master_v1/                 # Production POI1 model
+│   └── sanity_small/
+├── output/                        # Inference outputs
+│   ├── poi2_model/                # Trained POI2 model
+│   ├── poi2_data/
+│   ├── overlays_annot/
+│   ├── overlays_annot_rules/
+│   └── [CSVs and reports]
+├── demo_bundle_v2/                # Final demo package
+│   ├── app/app.py                 # Streamlit demo UI
+│   ├── clean_repair_visuals.py
+│   ├── repair_pretty.py
+│   ├── strict_clean_and_snap.py
+│   ├── inputs/                    # 3 demo sample images
+│   ├── repaired/                  # Repaired CAD outputs
+│   ├── overlays/                  # Annotated overlays
+│   ├── previews2d/                # Side-by-side pair renders
+│   ├── poi2/                      # Per-sample recommendation CSVs
+│   └── metrics/                   # poi2_confusion.csv, poi2_eval.json
+├── config.yaml                    # Base training config
+├── config_master.yaml             # Production POI1 config
+├── config_small.yaml              # Quick sanity-check config (2 epochs)
+└── config_poi2.yaml               # POI2 training config
 ```
 
-No human writes the correction. No human touches a file.
-
-### Stage 4 — Closed-Loop Verification
-
-The corrected simulation re-executes the task under the same joint commands. Success is verified programmatically. The geometric gap is closed.
-
 ---
 
-## Key Properties
+## Pipeline Overview
 
-**Simulation-only operation.** SimCorrect detects and corrects geometric faults entirely within simulation, using behavioral divergence between two simulation instances as the detection signal. Hardware is not required until deployment.
-
-**Deterministic fault isolation.** Geometric faults produce exact, reproducible end-effector errors. SimCorrect exploits this determinism to isolate faults with precision.
-
-**Source-level correction.** Correcting the CAD model propagates automatically to every derived artifact — URDF, MJCF, collision meshes, inertial tensors, motion planning models. One correction fixes the entire simulation stack.
-
-**Zero human intervention.** The full detect-identify-correct-verify loop runs without human input at any stage.
-
----
-
-## System Architecture
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                         SimCorrect                              │
-│                                                                 │
-│  ┌─────────────────┐   ┌──────────────────┐   ┌─────────────┐   │
-│  │   Divergence    │   │   Parameter      │   │  Closed-    │   │
-│  │   Detector      │──▶│   Identifier     │──▶│  Loop       │   │
-│  │                 │   │                  │   │  Verifier   │   │
-│  │ • EE trajectory │   │ • Sensitivity    │   │             │   │
-│  │   monitoring    │   │   analysis       │   │ • Task re-  │   │
-│  │ • Task outcome  │   │ • Fault          │   │   execution │   │
-│  │   classification│   │   isolation      │   │ • Success   │   │
-│  │                 │   │ • Parameter ID   │   │   assertion │   │
-│  └─────────────────┘   └──────────────────┘   └─────────────┘   │
-│                                │                                │
-└────────────────────────────────┼────────────────────────────────┘
-                                 │
-                                 ▼
-             ┌────────────────────────────────────┐
-             │           OpenCAD API              │
-             │                                    │
-             │                                    │
-             │  • Parametric geometry rebuild     │
-             │  • STL / MJCF export               │
-             │  • Simulation reload               │
-             └────────────────────────────────────┘
+                        27K CAD samples (images + DXF)
+                                    │
+                    ┌───────────────▼───────────────┐
+                    │           POI1                │
+                    │   Rules engine + ML model     │
+                    │   Output: PASS / REVIEW / FAIL│
+                    └───────────────┬───────────────┘
+                                    │ REVIEW + FAIL only
+                                    │ (poi1_to_handoff.py)
+                    ┌───────────────▼───────────────┐
+                    │           POI2                │
+                    │   Defect classification       │
+                    │   Output: defect category     │
+                    │   + fix recommendations       │
+                    └───────────────┬───────────────┘
+                                    │
+                    ┌───────────────▼───────────────┐
+                    │       Streamlit Demo          │
+                    │  Input │ Repaired │ Overlay   │
+                    │  POI2 recs │ Metrics          │
+                    └───────────────────────────────┘
 ```
 
-**SimCorrect owns:** fault detection, parameter identification, correction orchestration, verification.
-**OpenCAD owns:** geometry representation, parametric rebuild, file export.
+---
+
+## Stage 1 — POI1: Printability Classification
+
+**Question: Is this drawing printable?**
+**Classes: PASS / REVIEW / FAIL**
+**Dataset: All 27,000 samples**
+
+### Model Architecture
+
+```
+Image (PNG/JPG)
+  └─► MobileNetV3-Small ──► 256-dim embedding
+                                      │
+DXF geometry (512 tokens × 8 dim)    ├─► Concat ──► 512-dim ──► Head ──► 3 classes
+  └─► MLP (8→128→256) ──► mean ──► 256-dim
+```
+
+**DXF token format** — 8 dimensions per entity:
+`[type, x1, y1, x2, y2, radius, angle_start, angle_end]`
+Types: LINE=1, CIRCLE=2, ARC=3, LWPOLYLINE=4. All coordinates normalised to [0,1].
+
+### Configs
+
+| Config | epochs | batch | Use |
+|--------|--------|-------|-----|
+| `config_small.yaml` | 2 | 32 | Sanity check |
+| `config.yaml` | 10 | 32 | Standard run |
+| `config_master.yaml` | 1 | 8 | Production (full pipeline, MPS) |
+
+`config_master.yaml` also loads the ruleset directly:
+```yaml
+ruleset_path: rules/triview_rules_v1_0.yaml
+dxf_max_tokens: 512
+mixed_precision: true
+device: mps
+```
+
+### Dataset Split
+
+~27,000 samples, deterministic SHA-256 hash split:
+
+| Split | Count |
+|-------|-------|
+| train | ~21,600 |
+| val | ~2,700 |
+| test | ~2,700 |
+
+### POI1 Scripts (code/)
+
+| Script | Purpose |
+|--------|---------|
+| `read_meta.py` | Inspect first 5 entries of metadata.json |
+| `validate_pairs.py` | Check image ↔ DXF pairing; writes pairs.json |
+| `split.py` | Deterministic 80/10/10 split via SHA-256 |
+| `make_labels.py` | Generate labels from metadata.json fields |
+| `dxf_feature_extractor.py` | Extract geometric features from DXF files |
+| `label_from_rules_v2.py` | Apply YAML rules → labels_rules.csv |
+| `enrich_labels.py` | Merge rule_hits into labels_enriched.csv |
+| `rules_loader.py` | Load and validate YAML ruleset |
+| `poi1_dataloader.py` | PyTorch Dataset: images + DXF tokens + labels |
+| `model_def.py` | Lightweight CNN+MLP model (used for dry-run) |
+| `train_master_progress.py` | Training with step-level logging (dry-run) |
+| `train_master.py` | Production training: MPS, mixed precision, best-model checkpointing |
+| `poi1_extra_checks_with_standards.py` | Per-sample checks vs engineering standards |
+| `dxf_to_mesh.py` | Convert DXF profiles to 3D STL via Shapely + Trimesh |
+| `sanity_check.sh` | Full pre-flight checklist before training |
+| `test_pipeline_one.py` | End-to-end result lookup for a single sample ID |
+
+### POI1 Ruleset (triview_rules_v1_0.yaml)
+
+7 manufacturing profiles: `MP` (machined), `SM` (sheet metal), `IM` (injection moulding), `AP-FDM`, `AP-SLA`, `AP-SLS`, `AP-SLM`
+
+Key rules:
+
+| Rule ID | Description | Severity |
+|---------|-------------|----------|
+| A1_parse_ok | DXF must parse without error | critical |
+| A2_no_degenerate | No zero-length segments | critical |
+| A5_closed_loops | Closed profiles must close within tolerance | major |
+| D1_wall_min | Minimum wall thickness | major |
+| D2_hole_min | Minimum hole diameter | major |
+| E1_tiny_arc_limit | Arc radii above minimum | minor |
+| E2_density_tail | Entity density not extreme | major |
+| G_AP_overhang | Overhang within profile max | major |
+
+Scoring policy: any critical → FAIL; score ≥ 2 → FAIL; score = 1 → REVIEW; score = 0 → PASS
+
+### Engineering Standards Checked (poi1_extra_checks_with_standards.py)
+
+| Check | Standard | Threshold |
+|-------|----------|-----------|
+| Units | ISO 10303 / ASME Y14.5 | Must be mm |
+| Scale | ISO 286-1 | 0.95–1.05 |
+| Tolerance | ASTM F2921-11 | 0.05–0.50 mm |
+| Min clearance | ASTM F2921-11 / Stratasys | ≥ 0.20 mm |
 
 ---
 
-## Installation
+## Stage 2 — POI2: Defect Classification
+
+**Question: What is wrong with it?**
+**Classes: 8 defect categories**
+**Dataset: REVIEW + FAIL samples from POI1 only**
+
+### Defect Categories (defects_po2_v1.yaml)
+
+| Category | Triggered by |
+|----------|-------------|
+| OVERHANG_SUPPORT | max_overhang_deg > 45° |
+| THIN_WALL | min_wall_mm < max(0.80mm, 3× line width) |
+| MIN_FEATURE | hole/slot/emboss < 0.50mm |
+| CLEARANCE | xy_clearance < 0.20mm or z_clearance < layer height |
+| TOLERANCE | tol_band outside 0.05–0.50mm |
+| THERMAL_WARPING | flat area > 25cm² or warp_risk_flag |
+| LAYER_SHIFT_STRINGING | travel > 120mm p95, tower aspect > 10, stringing flag |
+| OTHER | fallback |
+
+### Model
+
+ResNet-18 fine-tuned from ImageNet weights, image-only (no DXF), `OTHER` class excluded from training.
+
+### Config (config_poi2.yaml)
+
+```yaml
+manifest: output/poi2_manifest.csv
+save_dir: output/poi2_runs
+device: mps
+img_size: 224
+batch_size: 64
+epochs: 5
+lr: 1e-3
+val_split: 0.1
+test_split: 0.1
+seed: 42
+```
+
+### Fix Recommendations (fix_map.yaml)
+
+Each rule ID maps to concrete fix actions:
+
+| Rule | Fix Action |
+|------|-----------|
+| D2_hole_min | enlarge_holes_to: 12mm |
+| O1_overhang_max | add_supports (tree, 45°) or add_gusset |
+| W1_thin_wall | thicken_wall_to: 1.2mm |
+| C1_clearance_min | increase_clearance_to: 0.3mm |
+| B1_bridge_len_max | add_ribs every 20mm |
+| S1_slot_width_min | widen_slot_to: 0.6mm |
+| F1_text_size_min | enlarge_text: height ≥ 3mm |
+
+### POI2 Scripts (code/poi2/)
+
+| Script | Purpose |
+|--------|---------|
+| `poi1_to_handoff.py` | Filter REVIEW/FAIL from POI1 → handoff.jsonl with checksums |
+| `build_labels_po2_v2.py` | Map rule hits + POI1 checks → POI2 defect labels |
+| `poi2_train.py` | Train ResNet-18 defect classifier |
+
+---
+
+## Demo App (demo_bundle_v2/)
+
+A Streamlit app presenting the full integrated pipeline on 3 curated samples (IDs: 100041, 100063, 100129).
+
+**Run:**
 ```bash
-git clone https://github.com/caid-technologies/SimCorrect.git
-cd SimCorrect
-conda create -n simcorrect python=3.10
-conda activate simcorrect
-pip install mujoco numpy pillow imageio[ffmpeg]
-pip install opencad
+cd demo_bundle_v2
+streamlit run app/app.py
 ```
+
+**Shows per sample:**
+- Input image vs repaired image
+- Rule/prediction overlay
+- Side-by-side 2D preview
+- POI2 recommendations table
+- POI2 confusion matrix + eval JSON (downloadable)
+
+### Demo Visual Scripts
+
+| Script | Purpose |
+|--------|---------|
+| `strict_clean_and_snap.py` | Clean repaired renders, snap support structures into position, generate side-by-side pair previews |
+| `repair_pretty.py` | Prettify and annotate repair suggestion visuals |
+| `clean_repair_visuals.py` | Clean up overlay/repair output images |
+| `bl_render_pair_2d.py` | Blender script: render 2D tri-view pairs |
+| `bl_render_svg_3d.py` | Blender script: render 3D SVG views |
 
 ---
 
-## Quickstart — Problem 1
+## Running the Full Pipeline
+
+### 1. Validate dataset
 ```bash
-cd Problem1_ForearmLength
-python render_demo.py
-# Output: ~/Desktop/Video1_CantReach.mp4
+python code/validate_pairs.py --root dataset/triview_20K
+```
+
+### 2. Generate labels
+```bash
+python code/label_from_rules_v2.py \
+  --root    dataset/triview_20K \
+  --ruleset rules/triview_rules_v1_0.yaml \
+  --out     dataset/triview_20K/labels_rules.csv
+
+python code/enrich_labels.py
+```
+
+### 3. Split dataset
+```bash
+python code/split.py \
+  --root    dataset/triview_20K \
+  --labels  labels.csv \
+  --outdir  dataset/triview_20K
+```
+
+### 4. Sanity check
+```bash
+bash code/sanity_check.sh \
+  dataset/triview_20K \
+  dataset/triview_20K/labels.csv \
+  dataset/triview_20K
+```
+
+### 5. Train POI1
+```bash
+python code/train_master.py \
+  --config config_master.yaml \
+  --save   runs/master_v1
+```
+
+### 6. POI1 → POI2 handoff
+```bash
+python code/poi2/poi1_to_handoff.py \
+  output/poi1_extra_checks.csv \
+  --images_dir dataset/triview_20K/images \
+  --dxf_dir    dataset/triview_20K/dxf \
+  --out_dir    output/poi2_data
+
+python code/poi2/build_labels_po2_v2.py \
+  --handoff     output/poi2_data/handoff.jsonl \
+  --enriched_csv dataset/triview_20K/labels_enriched.csv \
+  --poi1_checks  output/poi1_extra_checks.csv \
+  --out_csv      output/poi2_data/labels_po2.csv
+```
+
+### 7. Train POI2
+```bash
+python code/poi2/poi2_train.py \
+  --labels     output/poi2_data/labels_po2.csv \
+  --images_dir dataset/triview_20K/images \
+  --out_dir    output/poi2_runs
+```
+
+### 8. Run demo
+```bash
+cd demo_bundle_v2
+streamlit run app/app.py
 ```
 
 ---
 
-## Demonstration Scenarios
+## Environment Setup
 
-### Problem 1 — Forearm Length Fault ✓ Complete
+The project requires a dedicated conda environment. The `base` environment does **not** have the necessary packages (torch, ezdxf, streamlit etc. are absent from base).
 
-| | Reference Arm | Faulty Arm | Corrected Arm |
-|---|---|---|---|
-| Elbow link length | 0.38 m | 0.24 m (−37%) | 0.38 m |
-| EE error at PICK config | 1.5 mm | 140 mm | 1.5 mm |
-| Grasp success | ✓ | ✗ | ✓ |
+### Create environment from scratch
 
-Both arms execute identical joint commands. The faulty arm's end-effector falls 14 cm short of the target due to the shortened forearm. SimCorrect detects the grasp failure, isolates the elbow link as the fault source, corrects the geometry via OpenCAD, reloads the simulation. The corrected arm succeeds.
+```bash
+# Create and activate
+conda create -n cadintel python=3.10
+conda activate cadintel
 
-### Problem 2 — Wrist Offset Fault *(in progress)*
+# PyTorch for Apple Silicon (MPS)
+conda install pytorch torchvision -c pytorch
 
-| | Reference Arm | Faulty Arm |
-|---|---|---|
-| Wrist lateral offset | 0.000 m | 0.007 m (+7.7%) |
-| Lateral EE error | ~0 mm | ~7 mm |
-| Joint RMSE | ~0 rad | ~0 rad (fault invisible in joint space) |
-| Grasp success | ✓ | ✗ |
+# Core pipeline
+pip install ezdxf pyyaml numpy pillow pandas
 
-### Problem 3 — Joint Friction Fault *(in progress)*
+# Demo app
+pip install streamlit
 
-| | Reference Arm | Faulty Arm |
-|---|---|---|
-| Joint friction coefficients | Nominal | +112% above specification |
-| Trajectory completion | Full | Stall before pick |
+# DXF → mesh conversion (dxf_to_mesh.py only)
+pip install shapely trimesh
 
----
-
-## Limitations
-
-**Single-fault assumption.** The current pipeline assumes one geometric fault is present at a time. Multi-fault scenarios require extension of the sensitivity analysis to handle coupled parameter interactions.
-
-**Simulation-internal detection.** Divergence detection currently operates between two simulation instances. Extending to real-world sensor data is a necessary step toward full deployment.
-
-**Manipulation-specific demonstrations.** The three demonstration scenarios focus on robot arm pick-and-place tasks. Generalization to other robot morphologies and task types has not yet been validated.
-
-**Fault type coverage.** The current framework targets geometric parameter faults. Other sources of the reality gap — sensor noise models, actuator dynamics, environmental contact properties — are outside the current scope.
-
----
-
-## Technical Stack
-
-| Component | Technology |
-|---|---|
-| Physics engine | MuJoCo 3.x |
-| CAD correction | OpenCAD API — Caid Technologies |
-| Divergence detection | End-effector trajectory analysis |
-| Parameter identification | Sensitivity-based geometric analysis |
-| Visualization | MuJoCo offscreen renderer |
-| Rendering pipeline | PIL, imageio / ffmpeg |
-| Language | Python 3.10+ |
-
----
-
-## Repository Structure
-```
-SimCorrect/
-├── README.md
-├── Problem1_ForearmLength/
-│   ├── sim_pair.py
-│   ├── divergence_detector.py
-│   ├── parameter_identifier.py
-│   ├── correction_and_validation.py
-│   ├── render_demo.py
-│   └── README.md
-├── Problem2_WristOffset/
-│   ├── sim_pair.py
-│   ├── divergence_detector.py
-│   ├── parameter_identifier.py
-│   ├── correction_and_validation.py
-│   ├── render_demo.py
-│   └── README.md
-└── Problem3_JointFriction/
-    └── README.md
+# Misc utilities
+pip install matplotlib tqdm
 ```
 
----
+### Verify MPS (Apple Silicon GPU) is available
 
-## Citation
-```bibtex
-@misc{priya2026simcorrect,
-  title     = {SimCorrect: Autonomous Geometric Fault Detection and CAD Correction
-               for Sim-to-Real Gap Closure in Robot Manipulation},
-  author    = {Priya, Shreya and Hu, Dean},
-  year      = {2026},
-  publisher = {Caid Technologies},
-  url       = {https://github.com/caid-technologies/SimCorrect}
-}
+```bash
+python - <<'PY'
+import torch
+print("MPS available:", torch.backends.mps.is_available())
+PY
 ```
 
+### Notes
+
+- Requires Python 3.10 and PyTorch 2.x
+- Runs on Apple Silicon (MPS) automatically, falls back to CPU if unavailable
+- Two conda installs are present on this machine (`/Users/apple/miniforge3` and `/opt/homebrew/anaconda3`) — always use miniforge3's conda to avoid conflicts:
+  ```bash
+  /Users/apple/miniforge3/bin/conda activate cadintel
+  ```
+
 ---
 
-## Authors
+## Results
 
-**Shreya Priya** — Robotics Engineer & Researcher
-Divergence detection, parameter identification, correction loop, simulation pipeline
-
-**Dean (Dien) Hu** — Founder, Caid Technologies
-OpenCAD AI-native parametric CAD, geometry rebuild, STL/STEP export pipeline
+- POI1 best val accuracy: tracked in `runs/master_v1/val_report.json`
+- POI2 confidence: ~0.74 (from presentation)
+- Demo samples: 100041 (FAIL), 100063, 100129
+- Full eval metrics: `demo_bundle_v2/metrics/poi2_eval.json`
