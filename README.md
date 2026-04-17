@@ -99,9 +99,7 @@ python render_demo.py
 
 ## Repository Structure
 
-The repository is organized into five self-contained problem folders, each representing one fault scenario. A shared OpenCAD module lives at the root and is imported by all five problems.
-
-Every problem folder contains the same set of files. The render_demo.py file produces an 88-second video demonstrating the fault, the divergence between arms, the autonomous correction, and the validated result. The sim_pair.py file runs the paired simulation and prints the key diagnostic measurements. The divergence_detector.py file classifies the fault as geometric or dynamic based on end-effector error and joint RMSE. The parameter_identifier.py file estimates the responsible parameter from the measured fault signature. The correction_and_validation.py file runs the full closed-loop pipeline and prints a pass or fail result with all assertions. The demo.py file prints a concise summary of the fault, the physics, and the correction. The step0.py file checks the environment and confirms all dependencies before running anything else.
+The repository is organized into five self-contained problem folders, each representing one fault scenario. A shared OpenCAD module lives at the root and is imported by all five problems. Every problem folder follows the same structure.
 SimCorrect/
 ├── opencad.py
 ├── Problem1_ForearmLength/
