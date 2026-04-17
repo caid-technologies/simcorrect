@@ -100,6 +100,8 @@ python render_demo.py
 ## Repository Structure
 
 The repository is organized into five self-contained problem folders, each representing one fault scenario. A shared OpenCAD module lives at the root and is imported by all five problems. Every problem folder follows the same structure.
+
+```text
 SimCorrect/
 ├── opencad.py
 ├── Problem1_ForearmLength/
