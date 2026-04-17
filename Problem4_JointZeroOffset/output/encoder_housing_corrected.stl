@@ -1,0 +1,2 @@
+OPENCAD-MOCK
+{"shape_id": "boolean_cut-0002", "kind": "boolean_cut", "volume": 0.00017954706003884985, "bbox": {"min_x": -0.035, "min_y": -0.035, "min_z": 0.0, "max_x": 0.035, "max_y": 0.035, "max_z": 0.06}, "parameters": {"shape_a_id": "boolean_cut-0001", "shape_b_id": "box-0001"}}
