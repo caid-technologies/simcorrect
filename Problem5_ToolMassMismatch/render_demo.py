@@ -7,7 +7,7 @@ W,H=1920,1080; FPS=30; DUR=88
 OUT=os.path.expanduser("~/simcorrect/Problem5_ToolMassMismatch/output/Video5_ToolMassMismatch.mp4")
 GT_L1=0.34; GT_L2=0.30; GT_L3=0.12; GT_L4=0.10; EE_OFF=0.015
 ARM_L_Y=-0.55; ARM_R_Y=0.55; BASE_Z=0.66
-PED_Z=0.40; CAN_HALF=0.11; CAN_X=0.52; CAN_Z=PED_Z+CAN_HALF
+PED_Z=0.35; CAN_HALF=0.11; CAN_X=0.52; CAN_Z=PED_Z+CAN_HALF
 TABLE_X=-0.65; TABLE_Z=0.52
 GRIP_OPEN=0.0; GRIP_CLOSED=1.0; J4_LIM=0.3
 MASS_MODEL=0.10; MASS_ACTUAL=0.16; MASS_GT=MASS_MODEL
@@ -524,6 +524,8 @@ def main():
             else:
                 q_l,g_l=cor_ctrl_l(t); q_r,g_r=cor_ctrl_r(t); corr_applied=True
             set_arm(data,lj,rj,q_l,q_r)
+            data.qpos[LA:LA+4]=q_l; data.qpos[RA:RA+4]=q_r
+            data.qvel[LA:LA+4]*=0.05; data.qvel[RA:RA+4]*=0.05
             set_fingers(data,lf,rf,g_l,g_r)
             mujoco.mj_step(model,data)
             mujoco.mj_kinematics(model,data)
