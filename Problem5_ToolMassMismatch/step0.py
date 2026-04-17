@@ -15,18 +15,15 @@ def main():
     for f in files:
         p = os.path.join(FOLDER, f)
         print(f"  {f}: {'OK' if os.path.exists(p) else 'MISSING'}")
-
     opencad_path = os.path.expanduser("~/simcorrect/opencad.py")
     print(f"  opencad.py (root): {'OK' if os.path.exists(opencad_path) else 'MISSING'}")
-
     try:
         from opencad import Part
         p = Part("grip").set_mass(0.160)
         p.export("/tmp/opencad_test.xml")
-        print(f"  OpenCAD import:    OK")
+        print("  OpenCAD import:    OK")
     except Exception as e:
-        print(f"  OpenCAD import:    FAILED — {e}")
-
+        print(f"  OpenCAD import:    FAILED -- {e}")
     try:
         import mujoco; print(f"  mujoco:            {mujoco.__version__}  OK")
     except ImportError: print("  mujoco:            NOT FOUND")
@@ -36,7 +33,6 @@ def main():
     try:
         from PIL import Image; print("  Pillow:            OK")
     except ImportError: print("  Pillow:            NOT FOUND")
-
     print("\nStep 0 complete. Run order:")
     print("  python demo.py")
     print("  python sim_pair.py")
