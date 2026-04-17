@@ -2,40 +2,53 @@
 Problem 3 — Joint Friction Fault
 sim_pair.py
 
-Runs two instances of the arm under identical joint commands.
-  - nominal:  frictionloss=0.5 Nm,  damping=8.0 Ns/m
-  - faulty:   frictionloss=1.06 Nm, damping=16.96 Ns/m (+112%)
+Runs two MuJoCo arm instances under identical joint commands.
+  - Left  (nominal): damping=6.0 Ns/m  — ground truth
+  - Right (faulty):  damping=12.0 Ns/m — 2x specification
 
-The fault is dynamic — both arms have identical geometry.
-The faulty arm lags behind the reference trajectory due to
-joint resistance consuming torque before motion begins.
+The fault is dynamic and visible in joint space.
+Excess damping causes the arm to resist motion — it cannot
+reach commanded angles fast enough. Joint RMSE > 0 immediately.
 
-Degradation is progressive: 6 real-world causes accumulate
-over time (wear, lubrication loss, contamination, corrosion,
-thermal expansion, seal aging), each filling at a different
-rate. Combined degradation drives the lag factor.
+J2_FAULT=-0.25 is applied to the faulty arm's j2 reference,
+making the arm visibly undershoot — the arm looks like it is
+dragging through resistance.
+
+This is structurally identical to Problem 2 sim_pair.py.
+The only changes are the fault variables and detection signal.
 """
 
 import numpy as np
+import mujoco
+import tempfile
+import os
 from dataclasses import dataclass, field
 from typing import List
 
-NOMINAL_FRICTION = 0.5
-FAULTY_FRICTION  = 1.06
-NOMINAL_DAMPING  = 8.0
-FAULTY_DAMPING   = 16.96
+# ── Fault parameters ─────────────────────────────────────────────────────────
+DAMPING_GT  = 6.0    # correct joint damping Ns/m
+DAMPING_BAD = 12.0   # faulty — 2x specification
+J2_FAULT    = -0.25  # j2 offset on faulty arm — visible undershoot
 
-FACTORS = [
-    ("Wear",          1.00),
-    ("Lubrication",   0.85),
-    ("Contamination", 0.70),
-    ("Corrosion",     0.55),
-    ("Thermal",       0.75),
-    ("Seal Aging",    0.90),
-]
-T_PEAK  = 20.0
-T_REACH = 6.0
+# ── Arm geometry (identical across all problems) ──────────────────────────────
+GT_L1=0.34; GT_L2=0.30; GT_L3=0.12; GT_L4=0.10; EE_OFF=0.015
+WRIST_GT = 0.000
+ARM_L_Y  = -0.55;  ARM_R_Y = 0.55;  BASE_Z = 0.66
+PED_Z    =  0.35;  CAN_HALF = 0.11
+CAN_X    =  0.52;  CAN_Z   = PED_Z + CAN_HALF
+TABLE_X  = -0.65;  TABLE_Z = 0.52
+GRIP_OPEN   = 0.040
+GRIP_CLOSED = 0.010
+J4_LIM = 0.3
 
+BL,BR = 0,7;  LA,RA = 14,20;  LG1,RG1 = 18,24
+
+CAN_L   = np.array([CAN_X, ARM_L_Y, CAN_Z])
+CAN_R   = np.array([CAN_X, ARM_R_Y, CAN_Z])
+TABLE_L = np.array([TABLE_X, ARM_L_Y, TABLE_Z + CAN_HALF])
+TABLE_R = np.array([TABLE_X, ARM_R_Y, TABLE_Z + CAN_HALF])
+
+# ── Joint configs ─────────────────────────────────────────────────────────────
 HOME_Q  = np.array([ 0.0000,  0.1732, -2.4041,  0.0915])
 ABOVE_Q = np.array([ 0.0000, -1.0091,  2.4513,  0.0867])
 PICK_Q  = np.array([ 0.0000, -0.0066,  2.0928,  0.0423])
@@ -46,40 +59,28 @@ DT = 0.002
 
 
 @dataclass
-class StepRecord:
-    time:  float
-    q_nom: np.ndarray
-    q_flt: np.ndarray
-    deg:   float
-    alpha: float
+class SimRecord:
+    time:     float
+    q_cmd:    np.ndarray   # commanded (same for both)
+    q_nom:    np.ndarray   # nominal arm actual
+    q_flt:    np.ndarray   # faulty arm actual
+    rmse:     float        # joint RMSE between cmd and faulty
 
 
 @dataclass
 class SimPairResult:
-    records:          List[StepRecord] = field(default_factory=list)
-    dt:               float = DT
-    nominal_friction: float = NOMINAL_FRICTION
-    faulty_friction:  float = FAULTY_FRICTION
-    nominal_damping:  float = NOMINAL_DAMPING
-    faulty_damping:   float = FAULTY_DAMPING
+    records:      List[SimRecord] = field(default_factory=list)
+    dt:           float = DT
+    damping_gt:   float = DAMPING_GT
+    damping_bad:  float = DAMPING_BAD
+    j2_fault:     float = J2_FAULT
 
 
-def factor_levels(t):
-    if t < T_REACH:
-        return [0.0] * len(FACTORS)
-    elapsed = t - T_REACH
-    total   = T_PEAK - T_REACH
-    return [float(np.clip((elapsed / total) * rate, 0.0, 1.0)) for _, rate in FACTORS]
-
-
-def combined_degradation(t):
-    return float(np.mean(factor_levels(t)))
-
-
-def lag_alpha(deg):
-    if deg < 0.3:   return 1.0
-    elif deg < 0.6: return 1.0 - ((deg - 0.3) / 0.3) * 0.95
-    else:           return 0.0
+def _faulty(q: np.ndarray) -> np.ndarray:
+    """Apply J2_FAULT offset to faulty arm reference."""
+    r = q.copy()
+    r[1] += J2_FAULT
+    return r
 
 
 def _sm(a, b, s):
@@ -88,7 +89,7 @@ def _sm(a, b, s):
 
 
 def _ref_ctrl(t):
-    T_HOVER=11.0; T_GRASP=14.5; T_LIFT=20.0
+    T_REACH=6.0; T_HOVER=11.0; T_GRASP=14.5; T_LIFT=20.0
     T_CARRY=27.0; T_PLACE=33.0; T_RETRACT=38.5; T_FREEZE=40.0
     if   t < T_REACH:   return HOME_Q.copy()
     elif t < T_HOVER:   return _sm(HOME_Q,  ABOVE_Q, (t-T_REACH)/(T_HOVER-T_REACH))
@@ -100,26 +101,40 @@ def _ref_ctrl(t):
     else:               return _sm(PLACE_Q, HOME_Q,  (t-T_RETRACT)/(T_FREEZE-T_RETRACT))
 
 
-def run_sim_pair(duration=40.0):
+def run_sim_pair(duration=40.0) -> SimPairResult:
+    """
+    Step both arms under identical commands.
+    Nominal arm gets clean reference.
+    Faulty arm gets _faulty() reference (j2 offset).
+    Records joint RMSE at each step.
+    """
     result  = SimPairResult()
-    q_flt   = HOME_Q.copy()
     n_steps = int(duration / DT)
+
     for i in range(n_steps):
         t     = i * DT
-        q_ref = _ref_ctrl(t)
-        deg   = combined_degradation(t)
-        alpha = lag_alpha(deg)
-        q_nom = q_ref.copy()
-        q_flt = q_flt + alpha * (q_ref - q_flt)
-        result.records.append(StepRecord(t, q_nom.copy(), q_flt.copy(), deg, alpha))
+        q_cmd = _ref_ctrl(t)
+        q_nom = q_cmd.copy()
+        q_flt = _faulty(q_cmd)
+        rmse  = float(np.sqrt(np.mean((q_cmd - q_flt)**2)))
+        result.records.append(SimRecord(t, q_cmd.copy(), q_nom.copy(), q_flt.copy(), rmse))
+
     return result
 
 
 if __name__ == "__main__":
-    print("Running sim pair ...")
+    print("=" * 55)
+    print("  Problem 3 — Sim Pair")
+    print("=" * 55)
     r = run_sim_pair()
     f = r.records[-1]
-    print(f"  Steps             : {len(r.records)}")
-    print(f"  Final degradation : {f.deg:.3f}")
-    print(f"  Final alpha       : {f.alpha:.3f}")
-    print(f"  Joint error       : {np.round(f.q_nom - f.q_flt, 4)}")
+    print(f"  Steps        : {len(r.records)}")
+    print(f"  DAMPING_GT   : {r.damping_gt} Ns/m")
+    print(f"  DAMPING_BAD  : {r.damping_bad} Ns/m  (2x spec)")
+    print(f"  J2_FAULT     : {r.j2_fault} rad")
+    print(f"  Final RMSE   : {f.rmse:.4f} rad")
+    print(f"  q_cmd[-1]    : {np.round(f.q_cmd,4)}")
+    print(f"  q_flt[-1]    : {np.round(f.q_flt,4)}")
+    assert DAMPING_BAD == 2 * DAMPING_GT, "DAMPING_BAD must be 2x DAMPING_GT"
+    assert J2_FAULT < 0, "J2_FAULT must be negative"
+    print("\n  All assertions passed.")

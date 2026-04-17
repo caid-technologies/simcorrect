@@ -1,0 +1,2 @@
+OPENCAD-MOCK
+{"shape_id": "extrude-0001", "kind": "extrude", "volume": 0.00020000000000000004, "bbox": {"min_x": -0.025, "min_y": -0.025, "min_z": 0.0, "max_x": 0.025, "max_y": 0.025, "max_z": 0.08}, "parameters": {"sketch_id": "sketch-0001", "distance": 0.08, "both": false}}
