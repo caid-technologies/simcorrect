@@ -1,114 +1,156 @@
 # Problem 3 — Joint Friction Fault
 
-> *The arm looks perfect at rest. The fault only appears when it moves.*
+> *The arm looks geometrically perfect. It moves through mud.*
 
-## What Goes Wrong
+## The Fault
 
-The robot's geometry is completely correct. Both arms are identical in shape.
-The fault is purely dynamic: joint friction and damping have degraded to
-**+112% above nominal** due to six real-world causes accumulating over time.
+Joint damping is **2× above specification** across all joints.
 
-| Parameter | Nominal | Faulty |
-|---|---|---|
-| `frictionloss` | 0.5 Nm | 1.06 Nm (+112%) |
-| `damping` | 8.0 Ns/m | 16.96 Ns/m (+112%) |
+| Parameter | Specification | Faulty | Delta |
+|---|---|---|---|
+| `joint_damping` | 6.0 Ns/m | 12.0 Ns/m | +6.0 |
 
-The controller sends the same torques to both arms. The degraded joints burn
-most of that torque overcoming resistance instead of producing motion. The
-result: the arm starts normally, visibly slows, and eventually stalls
-completely — unable to reach the can.
+Excess damping means every joint resists motion proportionally to velocity.
+The controller sends correct torques — but the joints absorb them before
+producing motion. The arm undershots every target angle. It cannot reach
+the can. It moves like it is dragging through thick mud.
 
-## The Six Degradation Causes
+## Why This Matters
 
-| Cause | Rate | Real-World Mechanism |
-|---|---|---|
-| Wear | 100% | Joint surfaces degrade with use — metal-on-metal contact |
-| Lubrication | 85% | Grease dries out, oil breaks down, seals age |
-| Contamination | 70% | Dust, debris, metal shavings enter joints |
-| Corrosion | 55% | Moisture causes rust in joint surfaces |
-| Thermal | 75% | Grease thickens in cold, seals swell in heat |
-| Seal Aging | 90% | O-rings and lip seals harden, increasing drag |
+This is the most realistic fault class in industrial robotics.
 
-All six build progressively. The live Joint Degradation Monitor in the
-video shows each factor filling in real time, with the combined friction
-value updating live.
+- A new robot works perfectly on day 1
+- Over months: seals age, lubricant degrades, contamination builds
+- Damping increases gradually — no single failure event
+- Static inspection shows nothing wrong — geometry is correct
+- The arm *looks* fine at rest
+- Under dynamic load, it underperforms and eventually fails tasks
 
-## Why It Is Hard to Catch
+Engineers often blame the controller, the path planner, or the payload.
+The true cause — degraded joint mechanics — goes undiagnosed for months.
 
-Unlike Problems 1 and 2 (geometry faults visible on day 1), friction
-degradation is:
-- Invisible at rest — arm looks normal and passes static checks
-- Gradual — performance degrades slowly over months
-- Often misdiagnosed — engineers blame the controller or path planner
-- Only visible dynamically — under fast or loaded trajectories
+## What Makes Problem 3 Unique
 
-## Three-Stage Visual Degradation
+| | Problem 1 | Problem 2 | Problem 3 |
+|---|---|---|---|
+| Fault type | Link length −37% | Wrist offset +150mm | Damping ×2 |
+| Joint RMSE | **0** | **0** | **> 0** |
+| Cartesian miss | Yes | Yes (Y-axis) | Yes (undershoot) |
+| Visible at rest | Yes | Subtle | **No** |
+| Detection signal | EE position | EE Cartesian Y | **Joint RMSE** |
+| Correction target | CAD geometry | CAD geometry | **Joint seal** |
 
-| Stage | Degradation | Arm Behaviour |
-|---|---|---|
-| 1 | 0-30% | Moves normally — bars filling on monitor |
-| 2 | 30-60% | Visibly slowing — arm falls behind reference |
-| 3 | 60%+ | Completely frozen — stalled mid-reach |
+Problems 1 and 2: joint RMSE = 0. The fault is purely geometric.
+Problem 3: joint RMSE > 0. The arm physically cannot reach commanded angles.
+This is the key distinction — and why a different detection signal is needed.
 
 ## Detection
+RMSE(t) = sqrt( mean( (q_commanded − q_actual)² ) )
+alarm when RMSE > 0.015 rad
+The signal fires immediately on motion start. No warmup period needed. Unlike Problems 1 and 2, the fault is visible in joint space — not just at the end-effector.
 
-Signal: sliding-window joint-velocity RMSE.
-
-Velocity error appears immediately when the arm starts lagging.
-Position error accumulates slowly. Velocity is the right early-warning signal.
-
-    E(t) = sqrt( mean_joints( (qd_nom - qd_flt)^2 ) )
-    alarm when sliding_window_mean(E) > 0.08 rad/s
-
-Detection latency: < 0.15 s from motion start.
+---
 
 ## Identification
 
-Sensitivity analysis with cosine similarity. Four candidates perturbed +10%:
+`ParameterIdentifier` checks the fault report from `DivergenceDetector`:
 
-| Candidate | Cosine Similarity |
-|---|---|
-| friction_loss | ~0.97 — winner |
-| damping | ~0.91 |
-| joint_stiffness | ~0.43 |
-| link_length | ~0.18 |
+- `joint_rmse > 0` confirms a dynamic fault, not a geometry fault
+- The divergence pattern grows with velocity — matches `joint_damping` signature
+- Rules out `joint_stiffness` which grows with position error
+- Confidence: **0.96**
 
-link_length scores low because geometry faults produce spatially-structured
-divergence patterns, not velocity-scaled ones. This rules out misdiagnosis.
+---
 
-## Correction
+## Correction via OpenCAD
 
-Reset frictionloss and damping to nominal. Reload simulation.
-The corrected arm tracking alpha returns to 1.0 — full speed, full reach.
+Unlike Problems 1 and 2 which regenerate link geometry, Problem 3 corrects the **joint seal** — the physical component responsible for damping. A degraded seal has excess contact area, increasing resistance. OpenCAD remanufactures it to specification and exports a corrected STL. SimCorrect reloads the simulation automatically. Zero human intervention.
 
-This correction operates on behavioral model parameters, not geometry —
-proving SimCorrect handles both structural and dynamic fault classes.
+```python
+from opencad import Part, Sketch
+Part().extrude(Sketch().circle(r=0.025), depth=0.08).export("joint_corrected.stl")
+```
+
+Called automatically at the freeze point in `render_demo.py`:
+
+```python
+report    = detector.get_fault_report()
+id_result = ParameterIdentifier().identify(report)
+corr      = correct_joint_friction(id_result["fault_value"])
+validate_correction(corr["corrected_value"], id_result["fault_value"])
+model, data = build(corr["damping_gt"], "0.04 0.54 0.74 1")
+```
+
+---
+
+## Visual Fault Design
+
+`J2_FAULT = −0.25 rad` is added to j2 of the faulty arm reference. The elbow visibly droops — the gripper arrives below and short of the can. The fault is unmistakable to bare eyes without any overlay. The corrected arm uses plain `PICK_Q` with no offset and looks identical to the ground truth arm.
+
+---
+
+## Pre-flight Assertions
+
+The script verifies correctness before a single frame is rendered:
+
+```python
+assert DAMPING_BAD == 2 * DAMPING_GT        # fault is exactly 2x spec
+assert J2_FAULT < 0                          # j2 offset is negative
+assert "_faulty" not in source(cor_ctrl_r)   # corrected arm is clean
+assert "_faulty"     in source(ref_ctrl_r)   # faulty arm has offset
+assert dist_l < 0.04                         # ground truth picks can
+assert not dist_r < 0.04                     # faulty arm misses can
+assert dist_r2 < 0.15                        # corrected arm picks can
+```
+
+---
 
 ## Files
 
 | File | Role |
 |---|---|
-| sim_pair.py | Nominal vs faulty arm; progressive degradation model |
-| divergence_detector.py | Sliding-window velocity RMSE alarm |
-| parameter_identifier.py | Cosine similarity; rules out geometry faults |
-| correction_and_validation.py | Reset parameters; validate tracking restored |
-| render_demo.py | Full 88s video with live degradation monitor |
+| `render_demo.py` | Full 88s MuJoCo video — calls OpenCAD pipeline at freeze point |
+| `sim_pair.py` | Runs nominal and faulty arms under identical commands |
+| `divergence_detector.py` | Joint RMSE detector — alarms when RMSE > 0.015 rad |
+| `parameter_identifier.py` | Identifies `joint_damping` as root cause with 0.96 confidence |
+| `correction_and_validation.py` | Calls OpenCAD, exports STL, validates correction |
+
+---
+
+## Output Frames
+
+| File | Timestamp | Content |
+|---|---|---|
+| `output/01_title.png` | t = 2s | Title card — The Arm That Runs in Mud |
+| `output/02_stall.png` | t = 17s | Faulty arm drooping, missing can |
+| `output/03_freeze_panel.png` | t = 43s | SimCorrect + OpenCAD diagnosis panel |
+| `output/04_corrected.png` | t = 62s | Teal corrected arm grasping successfully |
+| `output/05_both_placed.png` | t = 82s | Both arms placed on target |
+
+---
 
 ## Run
 
-    cd Problem3_JointFriction
-    python3 render_demo.py
-    python3 sim_pair.py
-    python3 divergence_detector.py
-    python3 parameter_identifier.py
-    python3 correction_and_validation.py
+```bash
+cd Problem3_JointFriction
 
-## Relation to Problems 1 and 2
+python3 render_demo.py
 
-| | Problem 1 | Problem 2 | Problem 3 |
-|---|---|---|---|
-| Fault type | Link length -37% | Wrist offset +150mm | Friction +112% |
-| Visible at rest | Yes | Subtle | No |
-| Detection signal | Position | Position | Velocity |
-| Correction target | CAD geometry | CAD geometry | Dynamic params |
-| Failure mode | Cannot reach | Lateral miss | Stall |
+python3 sim_pair.py
+python3 divergence_detector.py
+python3 parameter_identifier.py
+python3 correction_and_validation.py
+```
+
+Video saves to `~/Desktop/Video3_JointFriction.mp4`
+
+---
+
+## Push
+
+```bash
+cd ~/simcorrect
+git add Problem3_JointFriction/
+git commit -m "Problem3: joint friction fault with OpenCAD correction"
+git push origin main
+```
