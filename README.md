@@ -1,6 +1,6 @@
 # SimCorrect
 
-## Autonomous Fault Detection and Correction for Robot Simulation Models
+## Fault Detection and Correction for Robot Simulation Models
 
 Shreya Priya · Dean (Dien) Hu
 
