@@ -9,8 +9,37 @@ Usage:
     Part('grip').set_mass(0.160).export('grip_corrected.xml')
     Part('joint1').set_ref(0.0000).export('joint1_corrected.xml')
 """
+import os
+import time
 import xml.etree.ElementTree as ET
-import os, time
+
+from caid_contract import (
+    ContractError,
+    apply_parameter_patch,
+    apply_patch_to_simulation_params,
+    get_parameter,
+    load_artifact,
+    make_patch_from_identification,
+    make_parameter_patch,
+    resolve_parameter_name,
+    simulation_target_for_parameter,
+    write_json,
+)
+
+__all__ = [
+    "ContractError",
+    "CorrectionRecord",
+    "Part",
+    "apply_parameter_patch",
+    "apply_patch_to_simulation_params",
+    "get_parameter",
+    "load_artifact",
+    "make_parameter_patch",
+    "make_patch_from_identification",
+    "resolve_parameter_name",
+    "simulation_target_for_parameter",
+    "write_json",
+]
 
 
 class CorrectionRecord:
