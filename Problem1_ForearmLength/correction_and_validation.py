@@ -6,14 +6,19 @@ Reruns simulation and validates convergence.
 Plots before vs after.
 """
 
+import json
+import os
+import tempfile
+
+import matplotlib.gridspec as gridspec
+import matplotlib.pyplot as plt
 import mujoco
 import numpy as np
-import tempfile
-import os
-import json
-import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
-from opencad import Part, Sketch
+
+try:
+    from .caid_loop import correct_params_from_artifact
+except ImportError:
+    from caid_loop import correct_params_from_artifact
 
 ROBOT_XML_TEMPLATE = """
 <mujoco model="simple_arm">
@@ -69,7 +74,7 @@ def run_simulation(params, duration=3.0, log_hz=100.0):
             ee_log.append(data.site_xpos[ee_id].copy())
     return np.array(times), np.array(log), np.array(ee_log)
 
-def opencad_correction(identification_result, current_params):
+def opencad_correction(identification_result, current_params, artifact=None):
     """
     Use OpenCAD to apply the parameter correction.
     Records the correction in the feature tree for audit trail.
@@ -77,24 +82,22 @@ def opencad_correction(identification_result, current_params):
     param = identification_result["identified_parameter"]
     proposed_value = identification_result["proposed_value"]
 
+    if artifact is not None:
+        result = correct_params_from_artifact(artifact, identification_result, current_params)
+        print(f"\nOpenCAD correction:")
+        print(f"  Simulation parameter: {param}")
+        print(f"  Patch parameter:      {result.patch['parameter_patches'][0]['name']}")
+        print(f"  From: {current_params[param]:.5f}m")
+        print(f"  To:   {proposed_value:.5f}m")
+        print(f"  CAID artifact patch prepared.")
+        return result.corrected_params
+
     print(f"\nOpenCAD correction:")
     print(f"  Parameter: {param}")
     print(f"  From: {current_params[param]:.5f}m")
     print(f"  To:   {proposed_value:.5f}m")
 
-    # Use OpenCAD feature tree to record the correction
-    # This creates an auditable parametric history of the fix
-    arm_profile = (
-        Sketch(name="Arm Correction Record")
-        .rect(proposed_value * 100, 4)   # scaled for CAD units (cm)
-    )
-    Part(name=f"Corrected_{param}").extrude(
-        arm_profile,
-        depth=4,
-        name=f"Correction: {param} = {proposed_value:.4f}m"
-    )
-
-    print(f"  OpenCAD feature tree updated — correction logged.")
+    print("  CAID artifact not set; applying simulation parameter directly.")
 
     # Apply correction to simulation parameters
     corrected_params = current_params.copy()
@@ -180,7 +183,8 @@ if __name__ == "__main__":
     gt_params     = {"link1_length": 0.30, "link2_length": 0.25}
 
     # Phase 4 — OpenCAD correction
-    corrected_params = opencad_correction(identification_result, faulty_params)
+    artifact_path = os.environ.get("CAID_DESIGN_ARTIFACT")
+    corrected_params = opencad_correction(identification_result, faulty_params, artifact=artifact_path)
     print(f"\nCorrected params: {corrected_params}")
 
     # Phase 5 — Rerun simulation with corrected params
