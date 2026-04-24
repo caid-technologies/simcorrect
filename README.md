@@ -72,16 +72,31 @@ Part('joint1').set_ref(0.0000).export('joint1_corrected.xml')
 
 The correction record is written to an XML file, the simulation reloads the corrected model, and the validation pipeline confirms the fault is eliminated before the result is accepted.
 
+SimCorrect can also consume the CAID design artifact exported by OpenCAD 0.1.1. The artifact gives the correction loop stable parameter names instead of forcing each problem script to infer values from ad hoc files.
+
+```python
+from opencad import apply_parameter_patch, load_artifact, make_patch_from_identification
+
+artifact = load_artifact("caid-design.json")
+patch = make_patch_from_identification(artifact, identification_result)
+corrected_artifact = apply_parameter_patch(artifact, patch)
+```
+
+The patch is structured JSON and can be sent back to OpenCAD to update named design parameters. If SimCorrect identifies an internal simulation target such as `link2_length`, the artifact can map it to a company-facing parameter such as `forearm_length` through a `kind="parameter"` simulation tag.
+
+Problem 1 now uses this path when `CAID_DESIGN_ARTIFACT` points at an OpenCAD artifact. Its pure helper lives in `Problem1_ForearmLength/caid_loop.py`, so the artifact-to-patch behavior can be tested without MuJoCo or rendering.
+
 ---
 
 ## Installation
 
+For development and contract tests, see `CONTRIBUTING.md`.
+
 ```bash
 git clone https://github.com/caid-technologies/SimCorrect.git
 cd SimCorrect
-conda create -n simcorrect python=3.10
-conda activate simcorrect
-pip install mujoco numpy pillow imageio[ffmpeg]
+uv venv --python 3.10
+uv pip install mujoco numpy pillow "imageio[ffmpeg]"
 ```
 
 ---
