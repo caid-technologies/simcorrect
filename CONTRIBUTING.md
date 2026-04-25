@@ -5,7 +5,8 @@
 SimCorrect is intentionally lightweight at the contract-test layer. Use uv for Python commands so the local package is installed consistently.
 
 ```bash
-uv run python -m unittest discover -s tests
+uv sync --extra test
+uv run --no-sync python -m unittest discover -s tests
 ```
 
 The full demos require MuJoCo and rendering dependencies documented in the README. Keep pure contract helpers free of MuJoCo imports so they remain fast to test.

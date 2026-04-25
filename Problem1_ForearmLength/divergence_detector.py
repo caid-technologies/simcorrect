@@ -6,8 +6,10 @@ import matplotlib.gridspec as gridspec
 
 try:
     from .paths import divergence_plot_path, trajectories_path
+    from .trajectory_io import load_trajectories
 except ImportError:
     from paths import divergence_plot_path, trajectories_path
+    from trajectory_io import load_trajectories
 
 RMSE_THRESHOLD = 0.002
 WINDOW_SIZE    = 20
@@ -99,7 +101,7 @@ def plot_divergence(report, save_path=None):
     print(f"Plot saved to {save_path}")
 
 if __name__ == "__main__":
-    traj = np.load(trajectories_path(), allow_pickle=True).item()
+    traj = load_trajectories(trajectories_path())
     report = detect_divergence(traj)
     print("\n── Divergence Detection Report ──")
     print(f"  Detected:             {report['detected']}")

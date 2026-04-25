@@ -11,8 +11,10 @@ import numpy as np
 
 try:
     from .paths import trajectories_path
+    from .trajectory_io import save_trajectories
 except ImportError:
     from paths import trajectories_path
+    from trajectory_io import save_trajectories
 from simcorrect_mujoco import load_model_from_xml
 
 
@@ -100,6 +102,6 @@ if __name__ == "__main__":
     print(f"\nJoint state RMSE between sims: {rmse:.6f} rad")
     print("Divergence confirmed." if rmse > 0 else "WARNING: No divergence detected")
     output = trajectories_path()
-    np.save(output, traj, allow_pickle=True)
+    save_trajectories(output, traj)
     print(f"Trajectories saved to {output}")
     print("Phase 1 complete.")

@@ -926,6 +926,10 @@ demo = [
     { name = "numpy", version = "2.4.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "pillow" },
 ]
+test = [
+    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "numpy", version = "2.4.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+]
 
 [package.metadata]
 requires-dist = [
@@ -933,9 +937,10 @@ requires-dist = [
     { name = "matplotlib", marker = "extra == 'demo'", specifier = ">=3" },
     { name = "mujoco", marker = "extra == 'demo'", specifier = ">=3" },
     { name = "numpy", marker = "extra == 'demo'", specifier = ">=1.24" },
+    { name = "numpy", marker = "extra == 'test'", specifier = ">=1.24" },
     { name = "pillow", marker = "extra == 'demo'", specifier = ">=10" },
 ]
-provides-extras = ["demo"]
+provides-extras = ["test", "demo"]
 
 [[package]]
 name = "six"

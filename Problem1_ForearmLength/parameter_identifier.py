@@ -6,8 +6,10 @@ import json
 
 try:
     from .paths import identification_result_path, trajectories_path
+    from .trajectory_io import load_trajectories
 except ImportError:
     from paths import identification_result_path, trajectories_path
+    from trajectory_io import load_trajectories
 from simcorrect_mujoco import load_model_from_xml
 
 ROBOT_XML_TEMPLATE = """
@@ -103,7 +105,7 @@ def identify_parameter(trajectories):
 
 if __name__ == "__main__":
     print("Phase 3: Parameter Identification")
-    traj = np.load(trajectories_path(), allow_pickle=True).item()
+    traj = load_trajectories(trajectories_path())
     result = identify_parameter(traj)
     print("\n── Identification Report ─────────────────────────────")
     print(f"  Identified parameter: {result['identified_parameter']}")

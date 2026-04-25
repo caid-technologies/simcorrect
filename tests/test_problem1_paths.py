@@ -30,7 +30,7 @@ class Problem1PathTests(unittest.TestCase):
 
         with patch.dict(os.environ, {OUTPUT_DIR_ENV: str(root)}):
             self.assertEqual(output_dir(), root)
-            self.assertEqual(trajectories_path(), root / "trajectories.npy")
+            self.assertEqual(trajectories_path(), root / "trajectories.npz")
             self.assertEqual(identification_result_path(), root / "identification_result.json")
             self.assertEqual(divergence_plot_path(), root / "divergence_detection.png")
             self.assertEqual(correction_plot_path(), root / "correction_validation.png")

@@ -22,7 +22,7 @@ def video_path(filename: str) -> Path:
 
 
 def trajectories_path() -> Path:
-    return output_path("trajectories.npy")
+    return output_path("trajectories.npz")
 
 
 def identification_result_path() -> Path:

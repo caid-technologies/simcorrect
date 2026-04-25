@@ -17,9 +17,11 @@ import numpy as np
 try:
     from .caid_loop import correct_params_from_artifact
     from .paths import correction_plot_path, identification_result_path, trajectories_path
+    from .trajectory_io import load_trajectories
 except ImportError:
     from caid_loop import correct_params_from_artifact
     from paths import correction_plot_path, identification_result_path, trajectories_path
+    from trajectory_io import load_trajectories
 from simcorrect_mujoco import load_model_from_xml
 
 ROBOT_XML_TEMPLATE = """
@@ -174,7 +176,7 @@ if __name__ == "__main__":
     print("Phase 4 + 5: OpenCAD Correction and Validation")
 
     # Load data
-    traj = np.load(trajectories_path(), allow_pickle=True).item()
+    traj = load_trajectories(trajectories_path())
     with identification_result_path().open(encoding="utf-8") as f:
         identification_result = json.load(f)
 
