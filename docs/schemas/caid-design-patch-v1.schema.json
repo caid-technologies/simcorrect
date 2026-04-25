@@ -34,7 +34,7 @@
           "type": "string"
         },
         "old_value": {
-          "oneOf": [
+          "anyOf": [
             {"type": "boolean"},
             {"type": "integer"},
             {"type": "number"},
@@ -46,7 +46,7 @@
           "type": ["string", "null"]
         },
         "value": {
-          "oneOf": [
+          "anyOf": [
             {"type": "boolean"},
             {"type": "integer"},
             {"type": "number"},

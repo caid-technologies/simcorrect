@@ -17,8 +17,10 @@ import numpy as np
 
 try:
     from .caid_loop import correct_params_from_artifact
+    from .paths import correction_plot_path, identification_result_path, trajectories_path
 except ImportError:
     from caid_loop import correct_params_from_artifact
+    from paths import correction_plot_path, identification_result_path, trajectories_path
 
 ROBOT_XML_TEMPLATE = """
 <mujoco model="simple_arm">
@@ -108,7 +110,8 @@ def compute_rmse(a, b):
     return float(np.sqrt(np.mean((a - b) ** 2)))
 
 def plot_before_after(traj_gt, traj_before, traj_after, times, identification_result,
-                      save_path="/tmp/correction_validation.png"):
+                      save_path=None):
+    save_path = save_path or correction_plot_path()
     fig = plt.figure(figsize=(14, 10), facecolor="#0a0f14")
     gs  = gridspec.GridSpec(2, 2, hspace=0.45, wspace=0.35)
     style = {"axes.facecolor":"#0d1520","axes.edgecolor":"#1a2a3a","axes.labelcolor":"#7a9ab0",
@@ -175,8 +178,8 @@ if __name__ == "__main__":
     print("Phase 4 + 5: OpenCAD Correction and Validation")
 
     # Load data
-    traj = np.load("/tmp/trajectories.npy", allow_pickle=True).item()
-    with open("/tmp/identification_result.json") as f:
+    traj = np.load(trajectories_path(), allow_pickle=True).item()
+    with identification_result_path().open(encoding="utf-8") as f:
         identification_result = json.load(f)
 
     faulty_params = {"link1_length": 0.30, "link2_length": 0.22}

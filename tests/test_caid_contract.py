@@ -56,6 +56,10 @@ class CaidContractTests(unittest.TestCase):
         self.assertEqual(set(patch_schema["required"]), PATCH_REQUIRED_KEYS)
         self.assertEqual(artifact_schema["properties"]["schema_version"]["const"], 1)
         self.assertEqual(patch_schema["properties"]["schema_version"]["const"], 1)
+        self.assertIn("anyOf", artifact_schema["$defs"]["parameter_value"])
+        self.assertNotIn("oneOf", artifact_schema["$defs"]["parameter_value"])
+        self.assertIn("anyOf", patch_schema["$defs"]["parameter_patch"]["properties"]["value"])
+        self.assertNotIn("oneOf", patch_schema["$defs"]["parameter_patch"]["properties"]["value"])
 
     def test_load_and_read_parameter(self):
         artifact = load_artifact(sample_artifact())

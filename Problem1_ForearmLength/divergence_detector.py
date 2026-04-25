@@ -4,6 +4,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 
+try:
+    from .paths import divergence_plot_path, trajectories_path
+except ImportError:
+    from paths import divergence_plot_path, trajectories_path
+
 RMSE_THRESHOLD = 0.002
 WINDOW_SIZE    = 20
 
@@ -46,7 +51,8 @@ def detect_divergence(trajectories):
         "injected_error": trajectories["injected_error"],
     }
 
-def plot_divergence(report, save_path="/tmp/divergence_detection.png"):
+def plot_divergence(report, save_path=None):
+    save_path = save_path or divergence_plot_path()
     times = report["times"]
     gt_js = report["gt_joint_states"]
     fx_js = report["fx_joint_states"]
@@ -93,7 +99,7 @@ def plot_divergence(report, save_path="/tmp/divergence_detection.png"):
     print(f"Plot saved to {save_path}")
 
 if __name__ == "__main__":
-    traj = np.load("/tmp/trajectories.npy", allow_pickle=True).item()
+    traj = np.load(trajectories_path(), allow_pickle=True).item()
     report = detect_divergence(traj)
     print("\n── Divergence Detection Report ──")
     print(f"  Detected:             {report['detected']}")

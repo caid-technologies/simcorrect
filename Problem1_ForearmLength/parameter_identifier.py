@@ -6,6 +6,11 @@ import tempfile
 import os
 import json
 
+try:
+    from .paths import identification_result_path, trajectories_path
+except ImportError:
+    from paths import identification_result_path, trajectories_path
+
 ROBOT_XML_TEMPLATE = """
 <mujoco model="simple_arm">
   <option timestep="0.002" gravity="0 0 -9.81"/>
@@ -103,7 +108,7 @@ def identify_parameter(trajectories):
 
 if __name__ == "__main__":
     print("Phase 3: Parameter Identification")
-    traj = np.load("/tmp/trajectories.npy", allow_pickle=True).item()
+    traj = np.load(trajectories_path(), allow_pickle=True).item()
     result = identify_parameter(traj)
     print("\n── Identification Report ─────────────────────────────")
     print(f"  Identified parameter: {result['identified_parameter']}")
@@ -114,7 +119,8 @@ if __name__ == "__main__":
     print(f"  True value:           {traj['injected_error']['true_value']}m")
     print(f"  All scores:           {result['all_scores']}")
     print("──────────────────────────────────────────────────────")
-    with open("/tmp/identification_result.json", "w") as f:
+    output = identification_result_path()
+    with output.open("w", encoding="utf-8") as f:
         json.dump(result, f, indent=2)
-    print("\nSaved to /tmp/identification_result.json")
+    print(f"\nSaved to {output}")
     print("Phase 3 complete.")

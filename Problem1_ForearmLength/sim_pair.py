@@ -11,6 +11,11 @@ import numpy as np
 import tempfile
 import os
 
+try:
+    from .paths import trajectories_path
+except ImportError:
+    from paths import trajectories_path
+
 
 ROBOT_XML_TEMPLATE = """
 <mujoco model="simple_arm">
@@ -100,6 +105,7 @@ if __name__ == "__main__":
     rmse = np.sqrt(np.mean((gt_js - fx_js) ** 2))
     print(f"\nJoint state RMSE between sims: {rmse:.6f} rad")
     print("Divergence confirmed." if rmse > 0 else "WARNING: No divergence detected")
-    np.save("/tmp/trajectories.npy", traj, allow_pickle=True)
-    print("Trajectories saved to /tmp/trajectories.npy")
+    output = trajectories_path()
+    np.save(output, traj, allow_pickle=True)
+    print(f"Trajectories saved to {output}")
     print("Phase 1 complete.")

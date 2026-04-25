@@ -94,7 +94,7 @@
       "type": "object"
     },
     "parameter_value": {
-      "oneOf": [
+      "anyOf": [
         {"type": "boolean"},
         {"type": "integer"},
         {"type": "number"},
