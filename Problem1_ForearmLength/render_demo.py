@@ -8,9 +8,10 @@ Simulation structure matches Problem 2 exactly.
 import mujoco, numpy as np, tempfile, os
 from PIL import Image, ImageDraw, ImageFont
 import imageio.v3 as iio
+from paths import video_path
 
 W,H=1920,1080; FPS=30; DUR=90
-OUT=os.path.join(os.path.dirname(os.path.abspath(__file__)),"Video1_CantReach.mp4")
+OUT=str(video_path("Video1_CantReach.mp4"))
 
 GT_L1=0.34; GT_L2_CORRECT=0.30; GT_L2_FAULT=0.19; GT_L3=0.12; GT_L4=0.10; EE_OFF=0.015
 ARM_L_Y=-0.55; ARM_R_Y=0.55; BASE_Z=0.66

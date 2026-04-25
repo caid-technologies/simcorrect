@@ -3,10 +3,11 @@ import tempfile
 import mujoco
 import numpy as np
 import imageio.v3 as iio
+from paths import video_path
 
 W,H=1600,900
 FPS=30
-OUT=os.path.expanduser("~/Desktop/video1_corl_baseline.mp4")
+OUT=str(video_path("video1_corl_baseline.mp4"))
 
 XML = """
 <mujoco model="corl_demo">

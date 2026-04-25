@@ -129,12 +129,14 @@ No technician. No laser tracker. No downtime.
 ## Run
 
 ```bash
-cd ~/simcorrect/Problem4_JointZeroOffset
+cd /path/to/SimCorrect/Problem4_JointZeroOffset
 python step0.py
 python demo.py
 python correction_and_validation.py
 python render_demo.py
 ```
+
+Generated videos, snapshots, and corrected STL artifacts are written to `Problem4_JointZeroOffset/output` by default. Set `SIMCORRECT_OUTPUT_DIR` to place artifacts in a temp, CI, or experiment-specific folder.
 
 ---
 

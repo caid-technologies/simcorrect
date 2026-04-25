@@ -20,11 +20,12 @@ import numpy as np
 import mujoco
 import imageio.v3 as iio
 from PIL import Image, ImageDraw, ImageFont
+from paths import video_path
 
 W, H = 1920, 1080
 FPS = 30
 DUR = 28.0
-OUT = os.path.expanduser("~/Desktop/video1_forearm_workflow.mp4")
+OUT = str(video_path("video1_forearm_workflow.mp4"))
 
 DT = 0.002
 

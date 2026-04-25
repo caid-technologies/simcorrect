@@ -12,6 +12,7 @@ FIXES APPLIED:
 import mujoco, numpy as np, tempfile, os
 from PIL import Image, ImageDraw, ImageFont
 import imageio.v3 as iio
+from paths import video_path
 
 print("="*65)
 print("  VIDEO 1: The Robot That Couldn't Reach")
@@ -22,7 +23,7 @@ print("="*65)
 W, H   = 1920, 1080
 FPS    = 30
 DUR    = 90
-OUT    = os.path.expanduser("~/Desktop/Video1_CantReach.mp4")
+OUT    = str(video_path("Video1_CantReach.mp4"))
 
 # ── VERIFIED JOINT CONFIGS ────────────────────────────────────────
 HOME_Q  = np.array([0,  1.10, -2.00, -0.70])

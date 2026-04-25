@@ -21,13 +21,14 @@ import numpy as np
 import mujoco
 import imageio.v3 as iio
 from PIL import Image, ImageDraw, ImageFont
+from paths import video_path
 
 # ── output ────────────────────────────────────────────────────────────────────
 W,  H  = 800,  450     # MuJoCo render resolution
 WO, HO = 1600, 900     # video output resolution
 FPS    = 30
 DT     = 0.002
-OUT    = os.path.expanduser("~/Desktop/simcorrect_p2_wrist_offset.mp4")
+OUT    = str(video_path("simcorrect_p2_wrist_offset.mp4"))
 
 # ── can geometry ──────────────────────────────────────────────────────────────
 CAN_R = 0.033     # 66 mm diameter (Coke can)

@@ -3,11 +3,12 @@ import tempfile
 import numpy as np
 import mujoco
 import imageio.v3 as iio
+from paths import video_path
 
 W, H = 1920, 1080
 FPS = 30
 DUR = 6
-OUT = os.path.expanduser("~/Desktop/video1_real_grasp.mp4")
+OUT = str(video_path("video1_real_grasp.mp4"))
 
 XML = f"""
 <mujoco model="render_sanity">

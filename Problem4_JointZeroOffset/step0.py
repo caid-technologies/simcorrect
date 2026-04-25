@@ -1,8 +1,10 @@
 """Setup and initialization check for Problem 4."""
 import os
 
-FOLDER=os.path.expanduser("~/simcorrect/Problem4_JointZeroOffset")
-OUTPUT=os.path.join(FOLDER,"output")
+from paths import output_dir, problem_dir
+
+FOLDER=problem_dir()
+OUTPUT=output_dir()
 
 def main():
     os.makedirs(OUTPUT,exist_ok=True)
@@ -11,7 +13,7 @@ def main():
     files=["render_demo.py","sim_pair.py","divergence_detector.py",
            "parameter_identifier.py","correction_and_validation.py","demo.py"]
     for f in files:
-        p=os.path.join(FOLDER,f)
+        p=FOLDER / f
         status="OK" if os.path.exists(p) else "MISSING"
         print(f"  {f}: {status}")
     try:

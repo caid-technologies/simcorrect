@@ -12,12 +12,13 @@ import mujoco, numpy as np, tempfile, os, inspect, math
 from PIL import Image, ImageDraw, ImageFont
 import imageio.v3 as iio
 
+from paths import output_dir, video_path
 from divergence_detector import DivergenceDetector
 from parameter_identifier import ParameterIdentifier
 from correction_and_validation import correct_joint_friction, validate_correction
 
 W,H=1920,1080; FPS=30; DUR=88
-OUT=os.path.expanduser("~/Desktop/Video3_JointFriction.mp4")
+OUT=str(video_path("Video3_JointFriction.mp4"))
 BL,BR=0,7; LA,RA=14,20; LG1,RG1=18,24
 GT_L1=0.34; GT_L2=0.30; GT_L3=0.12; GT_L4=0.10; EE_OFF=0.015
 WRIST_GT=0.000
@@ -490,7 +491,7 @@ def main():
 
     # ── Extract output frames ─────────────────────────────────────────────────
     print("\n[STEP 6] Extracting output frames...")
-    out_dir=os.path.join(os.path.dirname(os.path.abspath(__file__)),"output")
+    out_dir=str(output_dir())
     os.makedirs(out_dir,exist_ok=True)
     moments={"01_title.png":2.0,"02_stall.png":17.0,
              "03_freeze_panel.png":43.0,"04_corrected.png":62.0,"05_both_placed.png":82.0}

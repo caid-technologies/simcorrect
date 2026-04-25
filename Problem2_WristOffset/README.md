@@ -43,8 +43,10 @@ python sim_pair.py
 python divergence_detector.py
 python parameter_identifier.py
 python correction_and_validation.py
-python render_demo.py   # → ~/Desktop/Video2_WristOffset.mp4
+python render_demo.py   # -> output/Video2_WristDrift.mp4
 ```
+
+Generated videos are written to `Problem2_WristOffset/output` by default. Set `SIMCORRECT_OUTPUT_DIR` to place artifacts in a temp, CI, or experiment-specific folder.
 
 ## Expected Output
 ```

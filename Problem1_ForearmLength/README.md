@@ -78,7 +78,7 @@ The CAID artifact path is now the preferred integration path. OpenCAD exports a 
 
     CAID_DESIGN_ARTIFACT=caid-design.json python correction_and_validation.py
 
-Phase scripts write intermediate files to the system temp directory by default. Set `SIMCORRECT_OUTPUT_DIR` to use a project-local or CI-specific output folder.
+Phase scripts write intermediate files to the system temp directory by default. Demo videos write to `Problem1_ForearmLength/output` by default. Set `SIMCORRECT_OUTPUT_DIR` to use a project-local or CI-specific output folder for either path.
 
 No human writes the correction. No human touches a file.
 

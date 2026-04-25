@@ -34,6 +34,7 @@ import numpy as np
 import mujoco
 import imageio.v3 as iio
 from PIL import Image, ImageDraw, ImageFont
+from paths import video_path
 
 # ----------------------------
 # Output / rendering
@@ -41,7 +42,7 @@ from PIL import Image, ImageDraw, ImageFont
 W, H = 1600, 900
 FPS = 30
 DT = 0.002
-OUT = os.path.expanduser("~/Desktop/video1_corl_demo.mp4")
+OUT = str(video_path("video1_corl_demo.mp4"))
 
 # ----------------------------
 # Scene layout

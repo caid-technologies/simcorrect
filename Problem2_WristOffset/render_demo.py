@@ -2,9 +2,10 @@
 import mujoco, numpy as np, tempfile, os, math
 from PIL import Image, ImageDraw, ImageFont
 import imageio.v3 as iio
+from paths import video_path
 
 W,H=1920,1080; FPS=30; DUR=88
-OUT=os.path.expanduser("~/Desktop/Video2_WristDrift.mp4")
+OUT=str(video_path("Video2_WristDrift.mp4"))
 BL,BR=0,7; LA,RA=14,20; LG1,RG1=18,24
 GT_L1=0.34; GT_L2=0.30; GT_L3=0.12; GT_L4=0.10; EE_OFF=0.015
 WRIST_GT=0.000; WRIST_BAD=0.150
