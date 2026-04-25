@@ -25,7 +25,7 @@ def main():
     try:
         from PIL import Image; print("Pillow:  OK")
     except ImportError: print("Pillow: NOT FOUND")
-    print("Step 0 complete. Run: python render_demo.py")
+    print("Step 0 complete. Run: uv run --project .. python render_demo.py")
 
 if __name__=="__main__":
     main()

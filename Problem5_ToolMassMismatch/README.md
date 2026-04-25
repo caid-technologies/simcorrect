@@ -75,11 +75,11 @@ step0.py - Environment and dependency check
 
 ## Run
 
-python step0.py
-python demo.py
-python sim_pair.py
-python correction_and_validation.py
-python render_demo.py
+uv run --project .. python step0.py
+uv run --project .. python demo.py
+uv run --project .. python sim_pair.py
+uv run --project .. python correction_and_validation.py
+uv run --project .. python render_demo.py
 
 Generated correction XML and videos are written to `Problem5_ToolMassMismatch/output` by default. Set `SIMCORRECT_OUTPUT_DIR` to place artifacts in a temp, CI, or experiment-specific folder.
 

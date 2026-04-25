@@ -1,12 +1,8 @@
 from __future__ import annotations
 
 from pathlib import Path
-import sys
 
 _PROBLEM_DIR = Path(__file__).resolve().parent
-_REPO_ROOT = _PROBLEM_DIR.parent
-if str(_REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(_REPO_ROOT))
 
 from simcorrect_paths import OUTPUT_DIR_ENV, output_dir as _output_dir, output_path as _output_path
 

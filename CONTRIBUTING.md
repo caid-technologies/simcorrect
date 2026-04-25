@@ -2,13 +2,25 @@
 
 ## Development Setup
 
-SimCorrect is intentionally lightweight at the contract-test layer. Use uv for Python commands.
+SimCorrect is intentionally lightweight at the contract-test layer. Use uv for Python commands so the local package is installed consistently.
 
 ```bash
-uv run --no-project python -m unittest discover -s tests
+uv run python -m unittest discover -s tests
 ```
 
 The full demos require MuJoCo and rendering dependencies documented in the README. Keep pure contract helpers free of MuJoCo imports so they remain fast to test.
+
+For a full demo environment, install the optional rendering dependencies:
+
+```bash
+uv sync --extra demo
+```
+
+When running from a problem subdirectory, point uv at the repository project:
+
+```bash
+uv run --project .. python render_demo.py
+```
 
 ## CAID Contract
 

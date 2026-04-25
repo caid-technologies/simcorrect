@@ -99,8 +99,8 @@ For development and contract tests, see `CONTRIBUTING.md`.
 ```bash
 git clone https://github.com/caid-technologies/SimCorrect.git
 cd SimCorrect
-uv venv --python 3.10
-uv pip install mujoco numpy pillow "imageio[ffmpeg]"
+uv sync
+uv sync --extra demo  # required for MuJoCo render demos
 ```
 
 ---
@@ -109,9 +109,9 @@ uv pip install mujoco numpy pillow "imageio[ffmpeg]"
 
 ```bash
 cd Problem5_ToolMassMismatch
-python step0.py
-python demo.py
-python render_demo.py
+uv run --project .. python step0.py
+uv run --project .. python demo.py
+uv run --project .. python render_demo.py
 ```
 
 ---

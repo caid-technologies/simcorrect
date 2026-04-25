@@ -35,10 +35,10 @@ def main():
         from PIL import Image; print("  Pillow:            OK")
     except ImportError: print("  Pillow:            NOT FOUND")
     print("\nStep 0 complete. Run order:")
-    print("  python demo.py")
-    print("  python sim_pair.py")
-    print("  python correction_and_validation.py")
-    print("  python render_demo.py")
+    print("  uv run --project .. python demo.py")
+    print("  uv run --project .. python sim_pair.py")
+    print("  uv run --project .. python correction_and_validation.py")
+    print("  uv run --project .. python render_demo.py")
 
 if __name__ == "__main__":
     main()

@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "simcorrect"
+version = "0.1.1"
+description = "Autonomous simulation fault detection and correction demos with CAID artifact support."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE.md" }
+authors = [
+  { name = "CAID Technologies" },
+]
+dependencies = []
+
+[project.optional-dependencies]
+demo = [
+  "imageio[ffmpeg]>=2",
+  "matplotlib>=3",
+  "mujoco>=3",
+  "numpy>=1.24",
+  "pillow>=10",
+]
+
+[tool.setuptools]
+py-modules = [
+  "caid_contract",
+  "mjcf_correction",
+  "opencad",
+  "simcorrect_mujoco",
+  "simcorrect_paths",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = [
+  "Problem1_ForearmLength*",
+  "Problem2_WristOffset*",
+  "Problem3_JointFriction*",
+  "Problem4_JointZeroOffset*",
+  "Problem5_ToolMassMismatch*",
+]
+namespaces = true

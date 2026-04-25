@@ -1,3 +1,5 @@
 __pycache__/
 *.py[cod]
 MUJOCO_LOG.TXT
+.venv/
+*.egg-info/

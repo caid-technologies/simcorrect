@@ -39,11 +39,11 @@ arm.set_joints(q_corrected)
 
 ## Quickstart
 ```bash
-python sim_pair.py
-python divergence_detector.py
-python parameter_identifier.py
-python correction_and_validation.py
-python render_demo.py   # -> output/Video2_WristDrift.mp4
+uv run --project .. python sim_pair.py
+uv run --project .. python divergence_detector.py
+uv run --project .. python parameter_identifier.py
+uv run --project .. python correction_and_validation.py
+uv run --project .. python render_demo.py   # -> output/Video2_WristDrift.mp4
 ```
 
 Generated videos are written to `Problem2_WristOffset/output` by default. Set `SIMCORRECT_OUTPUT_DIR` to place artifacts in a temp, CI, or experiment-specific folder.

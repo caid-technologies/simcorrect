@@ -134,12 +134,12 @@ assert dist_r2 < 0.15                        # corrected arm picks can
 ```bash
 cd Problem3_JointFriction
 
-python3 render_demo.py
+uv run --project .. python render_demo.py
 
-python3 sim_pair.py
-python3 divergence_detector.py
-python3 parameter_identifier.py
-python3 correction_and_validation.py
+uv run --project .. python sim_pair.py
+uv run --project .. python divergence_detector.py
+uv run --project .. python parameter_identifier.py
+uv run --project .. python correction_and_validation.py
 ```
 
 Video saves to `Problem3_JointFriction/output/Video3_JointFriction.mp4` by default. Set `SIMCORRECT_OUTPUT_DIR` to place generated videos and snapshots elsewhere.
