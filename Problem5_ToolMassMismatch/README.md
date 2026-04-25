@@ -81,6 +81,8 @@ python sim_pair.py
 python correction_and_validation.py
 python render_demo.py
 
+Generated correction XML and videos are written to `Problem5_ToolMassMismatch/output` by default. Set `SIMCORRECT_OUTPUT_DIR` to place artifacts in a temp, CI, or experiment-specific folder.
+
 ## Dependencies
 
 mujoco 3.0 or later, numpy, Pillow, imageio with ffmpeg

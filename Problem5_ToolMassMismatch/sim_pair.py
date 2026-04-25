@@ -12,9 +12,9 @@ The fault manifests as a deterministic joint offset at extended poses:
 
 OpenCAD corrects the grip body inertial mass, restoring exact compensation.
 """
-import mujoco, numpy as np, sys, os
-sys.path.insert(0, os.path.expanduser("~/simcorrect"))
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import mujoco, numpy as np
+
+from paths import corrected_grip_xml_path
 from render_demo import (build, PICK_Q, PICK_Q_F, SAG_J2, SAG_J4, SAG_MM,
                           GRIP_OPEN, CAN_L, CAN_R, MASS_MODEL, MASS_ACTUAL,
                           get_ids, weld, set_arm, set_fingers)
@@ -86,7 +86,7 @@ def run_pair():
 
     print(f"\n--- Applying OpenCAD Correction ---")
     part = Part("grip").set_mass(MASS_ACTUAL)
-    part.export("/tmp/grip_corrected.xml")
+    part.export(str(corrected_grip_xml_path()))
     print(part.report())
     print(f"\n  Correction: grip.inertial.mass  {MASS_MODEL:.3f} -> {MASS_ACTUAL:.3f} kg")
     print(f"  Gravity compensation now exact. Joint lag eliminated.")

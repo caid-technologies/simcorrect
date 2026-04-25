@@ -1,20 +1,21 @@
 from __future__ import annotations
 
-import os
-import tempfile
 from pathlib import Path
+import sys
 
-OUTPUT_DIR_ENV = "SIMCORRECT_OUTPUT_DIR"
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
+from simcorrect_paths import OUTPUT_DIR_ENV, output_dir as _output_dir, output_path as _output_path
 
 
 def output_dir() -> Path:
-    return Path(os.environ.get(OUTPUT_DIR_ENV, tempfile.gettempdir()))
+    return _output_dir()
 
 
 def output_path(filename: str) -> Path:
-    path = output_dir() / filename
-    path.parent.mkdir(parents=True, exist_ok=True)
-    return path
+    return _output_path(filename)
 
 
 def trajectories_path() -> Path:

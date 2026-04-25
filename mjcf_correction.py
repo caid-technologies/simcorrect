@@ -68,13 +68,16 @@ class Part:
         self._ref = float(ref_rad)
         return self
 
-    def export(self, output_path: str) -> "Part":
+    def export(self, output_path: str | Path) -> "Part":
+        path = Path(output_path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        target = str(path)
         elapsed = time.perf_counter() - self._t0
         if self._tree is not None and self._root is not None:
             self._apply_to_tree(elapsed)
-            self._tree.write(output_path, encoding="unicode", xml_declaration=False)
+            self._tree.write(target, encoding="unicode", xml_declaration=False)
         else:
-            self._write_record_xml(output_path, elapsed)
+            self._write_record_xml(target, elapsed)
         return self
 
     @property

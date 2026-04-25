@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import unittest
 from unittest.mock import patch
+from pathlib import Path
+import tempfile
 import xml.etree.ElementTree as ET
 
 from mjcf_correction import Part
@@ -24,6 +26,14 @@ class MjcfCorrectionTests(unittest.TestCase):
 
     def test_legacy_opencad_import_still_exports_part(self):
         self.assertIs(CompatPart, Part)
+
+    def test_export_creates_parent_directories(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            output = Path(tempdir) / "nested" / "grip_corrected.xml"
+
+            Part("grip").set_mass(0.160).export(output)
+
+            self.assertTrue(output.exists())
 
 
 if __name__ == "__main__":

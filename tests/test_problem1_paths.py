@@ -13,6 +13,7 @@ from Problem1_ForearmLength.paths import (
     output_dir,
     trajectories_path,
 )
+from Problem5_ToolMassMismatch.paths import corrected_grip_xml_path
 
 
 class Problem1PathTests(unittest.TestCase):
@@ -25,6 +26,12 @@ class Problem1PathTests(unittest.TestCase):
             self.assertEqual(identification_result_path(), root / "identification_result.json")
             self.assertEqual(divergence_plot_path(), root / "divergence_detection.png")
             self.assertEqual(correction_plot_path(), root / "correction_validation.png")
+
+    def test_problem5_outputs_share_configured_output_dir(self):
+        root = Path(__file__).resolve().parent
+
+        with patch.dict(os.environ, {OUTPUT_DIR_ENV: str(root)}):
+            self.assertEqual(corrected_grip_xml_path(), root / "grip_corrected.xml")
 
 
 if __name__ == "__main__":
