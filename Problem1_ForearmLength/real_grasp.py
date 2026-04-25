@@ -1,9 +1,9 @@
 import os
-import tempfile
 import numpy as np
 import mujoco
 import imageio.v3 as iio
 from paths import video_path
+from simcorrect_mujoco import load_model_from_xml
 
 W, H = 1920, 1080
 FPS = 30
@@ -45,12 +45,7 @@ XML = f"""
 def main():
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
 
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".xml", delete=False) as f:
-        f.write(XML)
-        path = f.name
-
-    model = mujoco.MjModel.from_xml_path(path)
-    os.unlink(path)
+    model = load_model_from_xml(XML)
     data = mujoco.MjData(model)
 
     renderer = mujoco.Renderer(model, width=W, height=H)

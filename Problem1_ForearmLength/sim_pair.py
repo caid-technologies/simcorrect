@@ -8,13 +8,12 @@ Both log joint state trajectories for divergence detection.
 
 import mujoco
 import numpy as np
-import tempfile
-import os
 
 try:
     from .paths import trajectories_path
 except ImportError:
     from paths import trajectories_path
+from simcorrect_mujoco import load_model_from_xml
 
 
 ROBOT_XML_TEMPLATE = """
@@ -52,12 +51,7 @@ def build_xml(params):
     return ROBOT_XML_TEMPLATE.format(**params)
 
 def make_model(params):
-    xml = build_xml(params)
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.xml', delete=False) as f:
-        f.write(xml)
-        tmp_path = f.name
-    model = mujoco.MjModel.from_xml_path(tmp_path)
-    os.unlink(tmp_path)
+    model = load_model_from_xml(build_xml(params))
     return model, mujoco.MjData(model)
 
 def sinusoidal_control(t):

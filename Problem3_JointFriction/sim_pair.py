@@ -20,7 +20,6 @@ The only changes are the fault variables and detection signal.
 
 import numpy as np
 import mujoco
-import tempfile
 import os
 from dataclasses import dataclass, field
 from typing import List

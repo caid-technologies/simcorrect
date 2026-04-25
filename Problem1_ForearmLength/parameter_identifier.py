@@ -2,14 +2,13 @@
 
 import mujoco
 import numpy as np
-import tempfile
-import os
 import json
 
 try:
     from .paths import identification_result_path, trajectories_path
 except ImportError:
     from paths import identification_result_path, trajectories_path
+from simcorrect_mujoco import load_model_from_xml
 
 ROBOT_XML_TEMPLATE = """
 <mujoco model="simple_arm">
@@ -44,11 +43,7 @@ def sinusoidal_control(t):
     return np.array([0.4 * np.sin(2.0 * t), 0.3 * np.sin(1.5 * t + 0.5)])
 
 def make_model(params):
-    xml = ROBOT_XML_TEMPLATE.format(**params)
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.xml', delete=False) as f:
-        f.write(xml); tmp_path = f.name
-    model = mujoco.MjModel.from_xml_path(tmp_path)
-    os.unlink(tmp_path)
+    model = load_model_from_xml(ROBOT_XML_TEMPLATE.format(**params))
     return model, mujoco.MjData(model)
 
 def run_simulation(params, duration=3.0, log_hz=100.0):

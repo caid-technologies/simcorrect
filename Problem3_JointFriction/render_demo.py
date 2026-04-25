@@ -8,11 +8,12 @@ Fault: right arm j2 gets J2_FAULT=-0.25 offset — arm visibly undershoots.
 Detection: joint RMSE > 0 (fault visible in joint space).
 Correction: OpenCAD rebuilds joint seal, reloads sim with DAMPING_GT.
 """
-import mujoco, numpy as np, tempfile, os, inspect, math
+import mujoco, numpy as np, os, inspect, math
 from PIL import Image, ImageDraw, ImageFont
 import imageio.v3 as iio
 
 from paths import output_dir, video_path
+from simcorrect_mujoco import load_model_from_xml
 from divergence_detector import DivergenceDetector
 from parameter_identifier import ParameterIdentifier
 from correction_and_validation import correct_joint_friction, validate_correction
@@ -210,10 +211,7 @@ def build_xml(damping,rc):
 </mujoco>"""
 
 def build(damping=DAMPING_BAD,rc="0.92 0.18 0.12 1"):
-    xml=build_xml(damping,rc)
-    with tempfile.NamedTemporaryFile(mode='w',suffix='.xml',delete=False) as f:
-        f.write(xml); p=f.name
-    m=mujoco.MjModel.from_xml_path(p); os.unlink(p)
+    m=load_model_from_xml(build_xml(damping,rc))
     assert m.jnt_qposadr[0]==BL and m.jnt_qposadr[1]==BR
     assert m.jnt_qposadr[2]==LA and m.jnt_qposadr[8]==RA
     assert m.jnt_qposadr[6]==LG1 and m.jnt_qposadr[12]==RG1

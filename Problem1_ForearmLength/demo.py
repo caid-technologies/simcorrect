@@ -29,12 +29,12 @@ after successful close rather than a full contact-stability benchmark.
 
 import os
 import math
-import tempfile
 import numpy as np
 import mujoco
 import imageio.v3 as iio
 from PIL import Image, ImageDraw, ImageFont
 from paths import video_path
+from simcorrect_mujoco import load_model_from_xml
 
 # ----------------------------
 # Output / rendering
@@ -431,11 +431,7 @@ def build_model(right_corrected=False):
   </actuator>
 </mujoco>
 """
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".xml", delete=False) as f:
-        f.write(xml)
-        xml_path = f.name
-    model = mujoco.MjModel.from_xml_path(xml_path)
-    os.unlink(xml_path)
+    model = load_model_from_xml(xml)
     data = mujoco.MjData(model)
     return model, data
 

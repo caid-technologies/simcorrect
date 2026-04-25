@@ -1,8 +1,9 @@
 """Video 4 — Joint Zero Offset. Hinge curling fingers wrap around can, dramatic swing."""
-import mujoco, numpy as np, tempfile, os
+import mujoco, numpy as np, os
 from PIL import Image, ImageDraw, ImageFont
 import imageio.v3 as iio
 from paths import output_dir, video_path
+from simcorrect_mujoco import load_model_from_xml
 from opencad import Part, Sketch
 
 W,H=1920,1080; FPS=30; DUR=88
@@ -300,10 +301,7 @@ def build_xml(j1ref_r, rc):
 </mujoco>"""
 
 def build(j1ref_r=J1_REF_BAD, rc="0.92 0.18 0.12 1"):
-    xml=build_xml(j1ref_r,rc)
-    with tempfile.NamedTemporaryFile(mode='w',suffix='.xml',delete=False) as f:
-        f.write(xml); p=f.name
-    m=mujoco.MjModel.from_xml_path(p); os.unlink(p)
+    m=load_model_from_xml(build_xml(j1ref_r,rc))
     return m,mujoco.MjData(m)
 
 def get_adr(m,name):
