@@ -4,6 +4,11 @@ Schema version: `1`
 
 The CAID artifact is the stable boundary between OpenCAD and SimCorrect. OpenCAD owns design artifacts and applies design patches. SimCorrect consumes artifacts, identifies simulation faults, and returns patches against named design parameters.
 
+Machine-readable schemas:
+
+- [`schemas/caid-design-artifact-v1.schema.json`](schemas/caid-design-artifact-v1.schema.json)
+- [`schemas/caid-design-patch-v1.schema.json`](schemas/caid-design-patch-v1.schema.json)
+
 ## Design Artifact
 
 Required top-level fields:

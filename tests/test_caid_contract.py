@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+import json
+from pathlib import Path
 import unittest
 
 from caid_contract import (
+    ARTIFACT_REQUIRED_KEYS,
     ContractError,
+    PATCH_REQUIRED_KEYS,
     apply_parameter_patch,
     apply_patch_to_simulation_params,
     get_parameter,
@@ -20,6 +24,7 @@ def sample_artifact():
         "schema_version": 1,
         "artifact_id": "forearm-demo",
         "producer": {"name": "opencad", "version": "0.1.1"},
+        "created_at": "2026-04-24T00:00:00Z",
         "feature_tree": {"root_id": "root", "nodes": {}},
         "parameters": {
             "forearm_length": {
@@ -38,6 +43,20 @@ def sample_artifact():
 
 
 class CaidContractTests(unittest.TestCase):
+    def test_committed_json_schemas_expose_required_contract_keys(self):
+        repo_root = Path(__file__).resolve().parents[1]
+        artifact_schema = json.loads(
+            (repo_root / "docs" / "schemas" / "caid-design-artifact-v1.schema.json").read_text(encoding="utf-8")
+        )
+        patch_schema = json.loads(
+            (repo_root / "docs" / "schemas" / "caid-design-patch-v1.schema.json").read_text(encoding="utf-8")
+        )
+
+        self.assertEqual(set(artifact_schema["required"]), ARTIFACT_REQUIRED_KEYS)
+        self.assertEqual(set(patch_schema["required"]), PATCH_REQUIRED_KEYS)
+        self.assertEqual(artifact_schema["properties"]["schema_version"]["const"], 1)
+        self.assertEqual(patch_schema["properties"]["schema_version"]["const"], 1)
+
     def test_load_and_read_parameter(self):
         artifact = load_artifact(sample_artifact())
 
@@ -87,9 +106,47 @@ class CaidContractTests(unittest.TestCase):
                 {
                     "schema_version": 1,
                     "artifact_id": "forearm-demo",
+                    "source": "simcorrect",
                     "parameter_patches": [],
                 },
             )
+
+    def test_artifact_rejects_missing_required_contract_key(self):
+        artifact = sample_artifact()
+        del artifact["producer"]
+
+        with self.assertRaisesRegex(ContractError, "missing required key"):
+            load_artifact(artifact)
+
+    def test_artifact_rejects_parameter_name_mismatch(self):
+        artifact = sample_artifact()
+        artifact["parameters"]["forearm_length"]["name"] = "link2_length"
+
+        with self.assertRaisesRegex(ContractError, "does not match"):
+            load_artifact(artifact)
+
+    def test_artifact_rejects_malformed_simulation_tag(self):
+        artifact = sample_artifact()
+        artifact["simulation_tags"][1]["kind"] = "unknown"
+
+        with self.assertRaisesRegex(ContractError, "unsupported kind"):
+            load_artifact(artifact)
+
+    def test_patch_rejects_missing_source(self):
+        artifact = load_artifact(sample_artifact())
+        patch = make_parameter_patch(artifact, "forearm_length", 0.30)
+        del patch["source"]
+
+        with self.assertRaisesRegex(ContractError, "missing required key"):
+            apply_parameter_patch(artifact, patch)
+
+    def test_patch_rejects_unsupported_value_type(self):
+        artifact = load_artifact(sample_artifact())
+        patch = make_parameter_patch(artifact, "forearm_length", 0.30)
+        patch["parameter_patches"][0]["value"] = {"meters": 0.30}
+
+        with self.assertRaisesRegex(ContractError, "unsupported value type"):
+            apply_parameter_patch(artifact, patch)
 
     def test_identification_requires_target_and_value(self):
         artifact = load_artifact(sample_artifact())

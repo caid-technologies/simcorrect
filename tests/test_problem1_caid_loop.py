@@ -10,6 +10,7 @@ def forearm_artifact():
         "schema_version": 1,
         "artifact_id": "forearm-demo",
         "producer": {"name": "opencad", "version": "0.1.1"},
+        "created_at": "2026-04-24T00:00:00Z",
         "feature_tree": {"root_id": "root", "nodes": {}},
         "parameters": {
             "forearm_length": {
