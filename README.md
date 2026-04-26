@@ -54,9 +54,13 @@ The gripper physically weighs 0.160kg but the simulation model records it as 0.1
 
 ## Fault Coverage
 
-Forearm Length Error detects forearm length error through vertical end-effector overshoot with zero joint RMSE and corrects in 0.28 seconds. Wrist Lateral Offset detects wrist lateral offset through lateral end-effector drift with zero joint RMSE and corrects in 0.28 seconds. Joint Friction Fault detects joint friction excess through velocity-dependent joint lag with non-zero joint RMSE and corrects in 0.28 seconds. Base Encoder Offset detects encoder zero offset through rotational end-effector miss with zero joint RMSE and corrects in 0.28 seconds. Tool Mass Mismatch detects tool mass mismatch through gravity-dependent joint droop with non-zero joint RMSE and corrects in 0.28 seconds.
+Forearm Length Error: forearm length error through vertical end-effector overshoot with zero joint RMSE and corrects in 0.28 seconds
+Wrist Lateral Offset: wrist lateral offset through lateral end-effector drift with zero joint RMSE and corrects in 0.28 seconds 
+Joint Friction Fault: joint friction excess through velocity-dependent joint lag with non-zero joint RMSE and corrects in 0.28 seconds
+Base Encoder Offset: encoder zero offset through rotational end-effector miss with zero joint RMSE and corrects in 0.28 seconds 
+Tool Mass Mismatch: tool mass mismatch through gravity-dependent joint droop with non-zero joint RMSE and corrects in 0.28 seconds
 
-Three of the five faults are completely invisible in joint space and undetectable by any onboard diagnostic. Two are detectable as joint errors but unidentifiable without the paired simulation approach. All five are fully corrected autonomously with no human intervention.
+Three of the five faults are completely invisible in joint space and undetectable by any onboard diagnostic. Two are detectable as joint errors but unidentifiable without the paired simulation approach. All five are fully corrected without human intervention.
 
 ---
 
