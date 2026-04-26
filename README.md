@@ -30,23 +30,23 @@ The same pipeline handles both geometric faults, where joints execute correctly 
 
 ## The Five Fault Scenarios
 
-### Problem 1 — Forearm Length Error
+> Forearm Length Error
 
 The right arm forearm link is 80mm longer than its CAD specification. The arm overshoots its target on every pick attempt, closing the gripper above the can rather than around it. The joint encoders report normal values because the joints are doing exactly what they are told. The fault lives in geometry, not in motion. SimCorrect detects the vertical end-effector overshoot, isolates the forearm length as the responsible parameter, and corrects the link geometry via OpenCAD.
 
-### Problem 2 — Wrist Lateral Offset
+> Wrist Lateral Offset
 
 The right arm wrist bracket is physically mounted 150mm off-center in the lateral axis. The arm executes every joint command with perfect precision and lands its gripper 250mm away from the can on every attempt. Joint RMSE is zero throughout. The fault exists entirely in Cartesian space and is invisible to any joint-level diagnostic. SimCorrect detects the consistent lateral drift, identifies the wrist offset parameter, corrects it, and the arm grasps correctly on the next attempt.
 
-### Problem 3 — Joint Friction Fault
+> Joint Friction Fault
 
 Joint friction is running at more than double its specified value. The arm stalls mid-trajectory and loses positional accuracy under load. Unlike the geometric faults, this one produces non-zero joint RMSE. The joints physically cannot reach their commanded positions because friction is consuming torque that was meant for motion. SimCorrect detects the velocity-dependent joint lag, identifies the friction coefficient as the fault source, and corrects it.
 
-### Problem 4 — Base Encoder Offset
+> Base Encoder Offset
 
 The base rotation joint has its encoder mounted 8 degrees off its correct zero position. Every trajectory the arm executes inherits this rotational error at the root. The arm moves with absolute precision relative to what it believes is forward, and misses its target by 103mm because its definition of forward is wrong. Joint RMSE is zero. The positional error scales linearly with reach distance. SimCorrect detects the rotational signature, identifies the encoder zero offset, and corrects the joint reference in 0.28 seconds.
 
-### Problem 5 — Tool Mass Mismatch
+> Tool Mass Mismatch
 
 The gripper physically weighs 0.160kg but the simulation model records it as 0.100kg. The controller calculates gravity compensation torques based on the modelled mass, sending insufficient torque to hold the arm against the real gravitational load. At full horizontal extension, the uncompensated torque is 0.44 Nm. The arm droops 55mm below its commanded position on every pick attempt. No encoder error is generated. No controller alarm fires. The robot just quietly misses, every cycle. SimCorrect detects the non-zero joint RMSE at extended poses, confirms the gravity-dependent signature that distinguishes mass mismatch from friction, estimates the mass delta analytically, and corrects the model via OpenCAD.
 
@@ -54,7 +54,7 @@ The gripper physically weighs 0.160kg but the simulation model records it as 0.1
 
 ## Fault Coverage
 
-Problem 1 detects forearm length error through vertical end-effector overshoot with zero joint RMSE and corrects in 0.28 seconds. Problem 2 detects wrist lateral offset through lateral end-effector drift with zero joint RMSE and corrects in 0.28 seconds. Problem 3 detects joint friction excess through velocity-dependent joint lag with non-zero joint RMSE and corrects in 0.28 seconds. Problem 4 detects encoder zero offset through rotational end-effector miss with zero joint RMSE and corrects in 0.28 seconds. Problem 5 detects tool mass mismatch through gravity-dependent joint droop with non-zero joint RMSE and corrects in 0.28 seconds.
+Forearm Length Error detects forearm length error through vertical end-effector overshoot with zero joint RMSE and corrects in 0.28 seconds. Wrist Lateral Offset detects wrist lateral offset through lateral end-effector drift with zero joint RMSE and corrects in 0.28 seconds. Joint Friction Fault detects joint friction excess through velocity-dependent joint lag with non-zero joint RMSE and corrects in 0.28 seconds. Base Encoder Offset detects encoder zero offset through rotational end-effector miss with zero joint RMSE and corrects in 0.28 seconds. Tool Mass Mismatch detects tool mass mismatch through gravity-dependent joint droop with non-zero joint RMSE and corrects in 0.28 seconds.
 
 Three of the five faults are completely invisible in joint space and undetectable by any onboard diagnostic. Two are detectable as joint errors but unidentifiable without the paired simulation approach. All five are fully corrected autonomously with no human intervention.
 
