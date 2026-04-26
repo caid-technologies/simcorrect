@@ -2,9 +2,15 @@
 
 import mujoco
 import numpy as np
-import tempfile
-import os
 import json
+
+try:
+    from .paths import identification_result_path, trajectories_path
+    from .trajectory_io import load_trajectories
+except ImportError:
+    from paths import identification_result_path, trajectories_path
+    from trajectory_io import load_trajectories
+from simcorrect_mujoco import load_model_from_xml
 
 ROBOT_XML_TEMPLATE = """
 <mujoco model="simple_arm">
@@ -39,11 +45,7 @@ def sinusoidal_control(t):
     return np.array([0.4 * np.sin(2.0 * t), 0.3 * np.sin(1.5 * t + 0.5)])
 
 def make_model(params):
-    xml = ROBOT_XML_TEMPLATE.format(**params)
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.xml', delete=False) as f:
-        f.write(xml); tmp_path = f.name
-    model = mujoco.MjModel.from_xml_path(tmp_path)
-    os.unlink(tmp_path)
+    model = load_model_from_xml(ROBOT_XML_TEMPLATE.format(**params))
     return model, mujoco.MjData(model)
 
 def run_simulation(params, duration=3.0, log_hz=100.0):
@@ -103,7 +105,7 @@ def identify_parameter(trajectories):
 
 if __name__ == "__main__":
     print("Phase 3: Parameter Identification")
-    traj = np.load("/tmp/trajectories.npy", allow_pickle=True).item()
+    traj = load_trajectories(trajectories_path())
     result = identify_parameter(traj)
     print("\n── Identification Report ─────────────────────────────")
     print(f"  Identified parameter: {result['identified_parameter']}")
@@ -114,7 +116,8 @@ if __name__ == "__main__":
     print(f"  True value:           {traj['injected_error']['true_value']}m")
     print(f"  All scores:           {result['all_scores']}")
     print("──────────────────────────────────────────────────────")
-    with open("/tmp/identification_result.json", "w") as f:
+    output = identification_result_path()
+    with output.open("w", encoding="utf-8") as f:
         json.dump(result, f, indent=2)
-    print("\nSaved to /tmp/identification_result.json")
+    print(f"\nSaved to {output}")
     print("Phase 3 complete.")

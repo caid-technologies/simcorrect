@@ -8,16 +8,18 @@ Fault: right arm j2 gets J2_FAULT=-0.25 offset — arm visibly undershoots.
 Detection: joint RMSE > 0 (fault visible in joint space).
 Correction: OpenCAD rebuilds joint seal, reloads sim with DAMPING_GT.
 """
-import mujoco, numpy as np, tempfile, os, inspect, math
+import mujoco, numpy as np, os, inspect, math
 from PIL import Image, ImageDraw, ImageFont
 import imageio.v3 as iio
 
+from paths import output_dir, video_path
+from simcorrect_mujoco import load_model_from_xml
 from divergence_detector import DivergenceDetector
 from parameter_identifier import ParameterIdentifier
 from correction_and_validation import correct_joint_friction, validate_correction
 
 W,H=1920,1080; FPS=30; DUR=88
-OUT=os.path.expanduser("~/Desktop/Video3_JointFriction.mp4")
+OUT=str(video_path("Video3_JointFriction.mp4"))
 BL,BR=0,7; LA,RA=14,20; LG1,RG1=18,24
 GT_L1=0.34; GT_L2=0.30; GT_L3=0.12; GT_L4=0.10; EE_OFF=0.015
 WRIST_GT=0.000
@@ -209,10 +211,7 @@ def build_xml(damping,rc):
 </mujoco>"""
 
 def build(damping=DAMPING_BAD,rc="0.92 0.18 0.12 1"):
-    xml=build_xml(damping,rc)
-    with tempfile.NamedTemporaryFile(mode='w',suffix='.xml',delete=False) as f:
-        f.write(xml); p=f.name
-    m=mujoco.MjModel.from_xml_path(p); os.unlink(p)
+    m=load_model_from_xml(build_xml(damping,rc))
     assert m.jnt_qposadr[0]==BL and m.jnt_qposadr[1]==BR
     assert m.jnt_qposadr[2]==LA and m.jnt_qposadr[8]==RA
     assert m.jnt_qposadr[6]==LG1 and m.jnt_qposadr[12]==RG1
@@ -490,7 +489,7 @@ def main():
 
     # ── Extract output frames ─────────────────────────────────────────────────
     print("\n[STEP 6] Extracting output frames...")
-    out_dir=os.path.join(os.path.dirname(os.path.abspath(__file__)),"output")
+    out_dir=str(output_dir())
     os.makedirs(out_dir,exist_ok=True)
     moments={"01_title.png":2.0,"02_stall.png":17.0,
              "03_freeze_panel.png":43.0,"04_corrected.png":62.0,"05_both_placed.png":82.0}

@@ -15,16 +15,17 @@ Notes:
 """
 
 import os
-import tempfile
 import numpy as np
 import mujoco
 import imageio.v3 as iio
 from PIL import Image, ImageDraw, ImageFont
+from paths import video_path
+from simcorrect_mujoco import load_model_from_xml
 
 W, H = 1920, 1080
 FPS = 30
 DUR = 28.0
-OUT = os.path.expanduser("~/Desktop/video1_forearm_workflow.mp4")
+OUT = str(video_path("video1_forearm_workflow.mp4"))
 
 DT = 0.002
 
@@ -343,11 +344,7 @@ def build_model(right_l2, corrected=False):
   </actuator>
 </mujoco>
 """
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".xml", delete=False) as f:
-        f.write(xml)
-        path = f.name
-    model = mujoco.MjModel.from_xml_path(path)
-    os.unlink(path)
+    model = load_model_from_xml(xml)
     data = mujoco.MjData(model)
     return model, data
 

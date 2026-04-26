@@ -1,8 +1,7 @@
 """Problem 5 — fault summary and OpenCAD correction demo."""
-import sys, os
-sys.path.insert(0, os.path.expanduser("~/simcorrect"))
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import numpy as np
+
+from paths import corrected_grip_xml_path
 from opencad import Part
 from render_demo import (MASS_MODEL, MASS_ACTUAL, SAG_J2, SAG_J4, SAG_MM, PICK_Q, PICK_Q_F)
 
@@ -46,8 +45,9 @@ def main():
     print(f"Actual pose:      PICK_Q_F= {PICK_Q_F}")
     print()
     print("Running OpenCAD correction...")
+    export_path = corrected_grip_xml_path()
     part = Part("grip").set_mass(MASS_ACTUAL)
-    part.export("/tmp/grip_corrected.xml")
+    part.export(str(export_path))
     print(part.report())
     print()
     print(f"Correction:       grip.inertial.mass {MASS_MODEL:.3f} -> {MASS_ACTUAL:.3f} kg")

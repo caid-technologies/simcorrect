@@ -5,12 +5,14 @@ Fault: Elbow link 37% too short (0.19m vs correct 0.30m)
 Left arm = ground truth (silver), Right arm = faulty (red) -> corrected (teal)
 Simulation structure matches Problem 2 exactly.
 """
-import mujoco, numpy as np, tempfile, os
+import mujoco, numpy as np, os
 from PIL import Image, ImageDraw, ImageFont
 import imageio.v3 as iio
+from paths import video_path
+from simcorrect_mujoco import load_model_from_xml
 
 W,H=1920,1080; FPS=30; DUR=90
-OUT=os.path.join(os.path.dirname(os.path.abspath(__file__)),"Video1_CantReach.mp4")
+OUT=str(video_path("Video1_CantReach.mp4"))
 
 GT_L1=0.34; GT_L2_CORRECT=0.30; GT_L2_FAULT=0.19; GT_L3=0.12; GT_L4=0.10; EE_OFF=0.015
 ARM_L_Y=-0.55; ARM_R_Y=0.55; BASE_Z=0.66
@@ -196,10 +198,7 @@ def build_xml(l2,rc):
 </mujoco>"""
 
 def build(l2=GT_L2_FAULT,rc="0.92 0.18 0.12 1"):
-    xml=build_xml(l2,rc)
-    with tempfile.NamedTemporaryFile(mode="w",suffix=".xml",delete=False) as f:
-        f.write(xml); p=f.name
-    m=mujoco.MjModel.from_xml_path(p); os.unlink(p)
+    m=load_model_from_xml(build_xml(l2,rc))
     assert m.jnt_qposadr[0]==BL and m.jnt_qposadr[1]==BR
     assert m.jnt_qposadr[2]==LA and m.jnt_qposadr[8]==RA
     assert m.jnt_qposadr[6]==LG1 and m.jnt_qposadr[12]==RG1

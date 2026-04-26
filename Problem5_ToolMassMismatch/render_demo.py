@@ -1,10 +1,12 @@
 """Video 5 -- Tool Mass Mismatch. Kinematic sag injection with real OpenCAD correction."""
-import mujoco, numpy as np, tempfile, os
+import mujoco, numpy as np, os
 from PIL import Image, ImageDraw, ImageFont
 import imageio.v3 as iio
+from paths import corrected_grip_xml_path, output_dir, video_path
+from simcorrect_mujoco import load_model_from_xml
 
 W,H=1920,1080; FPS=30; DUR=88
-OUT=os.path.expanduser("~/simcorrect/Problem5_ToolMassMismatch/output/Video5_ToolMassMismatch.mp4")
+OUT=str(video_path("Video5_ToolMassMismatch.mp4"))
 GT_L1=0.34; GT_L2=0.30; GT_L3=0.12; GT_L4=0.10; EE_OFF=0.015
 ARM_L_Y=-0.55; ARM_R_Y=0.55; BASE_Z=0.66
 PED_Z=0.35; CAN_HALF=0.11; CAN_X=0.52; CAN_Z=PED_Z+CAN_HALF
@@ -245,10 +247,7 @@ def build_xml(tool_mass_r,rc):
 </mujoco>"""
 
 def build(tool_mass_r=MASS_ACTUAL,rc="0.92 0.18 0.12 1"):
-    xml=build_xml(tool_mass_r,rc)
-    with tempfile.NamedTemporaryFile(mode='w',suffix='.xml',delete=False) as f:
-        f.write(xml); p=f.name
-    m=mujoco.MjModel.from_xml_path(p); os.unlink(p)
+    m=load_model_from_xml(build_xml(tool_mass_r,rc))
     return m,mujoco.MjData(m)
 
 def get_adr(m,name):
@@ -489,10 +488,8 @@ def _result(ov,cx,cy,success,l1,l2):
     if l2: ov.text((cx-288,cy+4),l2,font=fnt(14),fill=(100,148,115) if success else (158,115,75))
 
 def main():
-    import sys
-    sys.path.insert(0, os.path.expanduser("~/simcorrect"))
     from opencad import Part
-    SNAP_DIR=os.path.expanduser("~/simcorrect/Problem5_ToolMassMismatch/output")
+    SNAP_DIR=str(output_dir())
     os.makedirs(SNAP_DIR,exist_ok=True)
     snaps={2.0:"01_title.png",17.0:"02_sag_miss.png",62.0:"04_corrected.png",82.0:"05_both_placed.png"}
     snaps_saved=set()
@@ -571,7 +568,7 @@ def main():
             if freeze_count>=freeze_total:
                 print(f"  [{t:.1f}s] Applying OpenCAD correction...")
                 part=Part("grip").set_mass(MASS_ACTUAL)
-                part.export("/tmp/grip_corrected.xml")
+                part.export(str(corrected_grip_xml_path()))
                 print(f"  {part.report()}")
                 model,data=build(MASS_ACTUAL,"0.04 0.54 0.74 1")
                 LA,RA,BL,BR,lee,ree,cam_id,lj,rj,lf,rf=get_ids(model)

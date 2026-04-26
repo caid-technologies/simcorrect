@@ -1,11 +1,43 @@
 """Problem 4 — Joint Zero Offset: correction via OpenCAD + validation."""
-import mujoco, numpy as np, inspect, sys, os
+import mujoco, numpy as np, inspect, os
 from opencad import Part, Sketch
 
-sys.path.insert(0, os.path.dirname(__file__))
-from render_demo import (build, HOME_Q, PICK_Q, LIFT_Q, CAN_L, CAN_R,
-                          J1_REF_BAD, J1_REF_GT, get_ids, weld, set_arm,
-                          set_fingers, GRIP_OPEN, ref_ctrl_r, cor_ctrl_r)
+try:
+    from .render_demo import (
+        CAN_L,
+        CAN_R,
+        GRIP_OPEN,
+        HOME_Q,
+        J1_REF_BAD,
+        J1_REF_GT,
+        LIFT_Q,
+        PICK_Q,
+        build,
+        cor_ctrl_r,
+        get_ids,
+        ref_ctrl_r,
+        set_arm,
+        set_fingers,
+        weld,
+    )
+except ImportError:
+    from render_demo import (
+        CAN_L,
+        CAN_R,
+        GRIP_OPEN,
+        HOME_Q,
+        J1_REF_BAD,
+        J1_REF_GT,
+        LIFT_Q,
+        PICK_Q,
+        build,
+        cor_ctrl_r,
+        get_ids,
+        ref_ctrl_r,
+        set_arm,
+        set_fingers,
+        weld,
+    )
 
 OUT_DIR = os.path.join(os.path.dirname(__file__), "output")
 os.makedirs(OUT_DIR, exist_ok=True)

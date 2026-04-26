@@ -1,8 +1,10 @@
 """Setup and initialization check for Problem 4."""
 import os
 
-FOLDER=os.path.expanduser("~/simcorrect/Problem4_JointZeroOffset")
-OUTPUT=os.path.join(FOLDER,"output")
+from paths import output_dir, problem_dir
+
+FOLDER=problem_dir()
+OUTPUT=output_dir()
 
 def main():
     os.makedirs(OUTPUT,exist_ok=True)
@@ -11,7 +13,7 @@ def main():
     files=["render_demo.py","sim_pair.py","divergence_detector.py",
            "parameter_identifier.py","correction_and_validation.py","demo.py"]
     for f in files:
-        p=os.path.join(FOLDER,f)
+        p=FOLDER / f
         status="OK" if os.path.exists(p) else "MISSING"
         print(f"  {f}: {status}")
     try:
@@ -23,7 +25,7 @@ def main():
     try:
         from PIL import Image; print("Pillow:  OK")
     except ImportError: print("Pillow: NOT FOUND")
-    print("Step 0 complete. Run: python render_demo.py")
+    print("Step 0 complete. Run: uv run --project .. python render_demo.py")
 
 if __name__=="__main__":
     main()

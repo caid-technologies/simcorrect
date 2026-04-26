@@ -1,0 +1,61 @@
+{
+  "$id": "https://caid-technologies.com/schemas/caid-design-patch-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "artifact_id": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "parameter_patches": {
+      "items": {
+        "$ref": "#/$defs/parameter_patch"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "source": {
+      "minLength": 1,
+      "type": "string"
+    }
+  },
+  "required": ["schema_version", "artifact_id", "source", "parameter_patches"],
+  "title": "CAID Design Patch v1",
+  "type": "object",
+  "$defs": {
+    "parameter_patch": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "old_value": {
+          "anyOf": [
+            {"type": "boolean"},
+            {"type": "integer"},
+            {"type": "number"},
+            {"type": "string"},
+            {"type": "null"}
+          ]
+        },
+        "reason": {
+          "type": ["string", "null"]
+        },
+        "value": {
+          "anyOf": [
+            {"type": "boolean"},
+            {"type": "integer"},
+            {"type": "number"},
+            {"type": "string"}
+          ]
+        }
+      },
+      "required": ["name", "value"],
+      "type": "object"
+    }
+  }
+}

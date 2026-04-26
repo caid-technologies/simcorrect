@@ -16,18 +16,20 @@ Coke can geometry: 66 mm dia, 122 mm tall.
 Gripper closes visibly around can when grasping.
 """
 
-import os, math, tempfile
+import os, math
 import numpy as np
 import mujoco
 import imageio.v3 as iio
 from PIL import Image, ImageDraw, ImageFont
+from paths import video_path
+from simcorrect_mujoco import load_model_from_xml
 
 # ── output ────────────────────────────────────────────────────────────────────
 W,  H  = 800,  450     # MuJoCo render resolution
 WO, HO = 1600, 900     # video output resolution
 FPS    = 30
 DT     = 0.002
-OUT    = os.path.expanduser("~/Desktop/simcorrect_p2_wrist_offset.mp4")
+OUT    = str(video_path("simcorrect_p2_wrist_offset.mp4"))
 
 # ── can geometry ──────────────────────────────────────────────────────────────
 CAN_R = 0.033     # 66 mm diameter (Coke can)
@@ -340,10 +342,7 @@ def build_model(corrected: bool = False):
   </actuator>
 </mujoco>
 """
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".xml", delete=False) as f:
-        f.write(xml); p = f.name
-    model = mujoco.MjModel.from_xml_path(p)
-    os.unlink(p)
+    model = load_model_from_xml(xml)
     return model, mujoco.MjData(model)
 
 # ── overlay / UI helpers ──────────────────────────────────────────────────────

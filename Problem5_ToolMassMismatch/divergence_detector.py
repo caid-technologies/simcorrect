@@ -76,9 +76,6 @@ def detect(dist_gt, dist_faulty, j_rmse, sag_z_mm,
 
 
 if __name__ == "__main__":
-    import sys, os
-    sys.path.insert(0, os.path.expanduser("~/simcorrect"))
-    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     from render_demo import SAG_J2, SAG_J4, SAG_MM
     j_rmse = np.sqrt(0.5*(SAG_J2**2 + SAG_J4**2))
     detect(dist_gt=0.050, dist_faulty=0.095,

@@ -74,6 +74,12 @@ SimCorrect identifies the forearm as the faulty parameter and corrects it throug
     Part('forearm').extrude(Sketch().circle(r=0.028), depth=0.38).export('forearm.stl')
     sim.reload('forearm.stl')
 
+The CAID artifact path is now the preferred integration path. OpenCAD exports a `caid-design.json` artifact with a company-facing `forearm_length` parameter mapped to this problem's MuJoCo `link2_length` parameter. If `CAID_DESIGN_ARTIFACT` is set, `correction_and_validation.py` creates a structured parameter patch from the identification result and uses that patch to produce corrected simulation parameters.
+
+    CAID_DESIGN_ARTIFACT=caid-design.json uv run --project .. python correction_and_validation.py
+
+Phase scripts write intermediate files to the system temp directory by default. Demo videos write to `Problem1_ForearmLength/output` by default. Set `SIMCORRECT_OUTPUT_DIR` to use a project-local or CI-specific output folder for either path.
+
 No human writes the correction. No human touches a file.
 
 ---
@@ -132,9 +138,7 @@ No human writes the correction. No human touches a file.
 ## Run
 
     cd Problem1_ForearmLength
-    python3 render_demo.py
-
-    pip install mujoco numpy pillow imageio[ffmpeg]
+    uv run --project .. python render_demo.py
 
 ---
 

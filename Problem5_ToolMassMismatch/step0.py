@@ -1,9 +1,10 @@
 """Setup and environment check for Problem 5."""
-import os, sys
-sys.path.insert(0, os.path.expanduser("~/simcorrect"))
+import os
 
-FOLDER = os.path.expanduser("~/simcorrect/Problem5_ToolMassMismatch")
-OUTPUT = os.path.join(FOLDER, "output")
+from paths import output_dir, smoke_test_xml_path
+
+FOLDER = os.path.dirname(os.path.abspath(__file__))
+OUTPUT = output_dir()
 
 def main():
     os.makedirs(OUTPUT, exist_ok=True)
@@ -15,12 +16,12 @@ def main():
     for f in files:
         p = os.path.join(FOLDER, f)
         print(f"  {f}: {'OK' if os.path.exists(p) else 'MISSING'}")
-    opencad_path = os.path.expanduser("~/simcorrect/opencad.py")
+    opencad_path = os.path.join(os.path.dirname(FOLDER), "opencad.py")
     print(f"  opencad.py (root): {'OK' if os.path.exists(opencad_path) else 'MISSING'}")
     try:
         from opencad import Part
         p = Part("grip").set_mass(0.160)
-        p.export("/tmp/opencad_test.xml")
+        p.export(str(smoke_test_xml_path()))
         print("  OpenCAD import:    OK")
     except Exception as e:
         print(f"  OpenCAD import:    FAILED -- {e}")
@@ -34,10 +35,10 @@ def main():
         from PIL import Image; print("  Pillow:            OK")
     except ImportError: print("  Pillow:            NOT FOUND")
     print("\nStep 0 complete. Run order:")
-    print("  python demo.py")
-    print("  python sim_pair.py")
-    print("  python correction_and_validation.py")
-    print("  python render_demo.py")
+    print("  uv run --project .. python demo.py")
+    print("  uv run --project .. python sim_pair.py")
+    print("  uv run --project .. python correction_and_validation.py")
+    print("  uv run --project .. python render_demo.py")
 
 if __name__ == "__main__":
     main()

@@ -69,23 +69,42 @@ Three of the five faults are completely invisible in joint space and undetectabl
 OpenCAD is the correction engine at the core of SimCorrect. It provides a programmatic interface for modifying simulation model parameters directly from fault identification results.
 
 ```python
-from opencad import Part
+from mjcf_correction import Part
 Part('grip').set_mass(0.160).export('grip_corrected.xml')
 Part('joint1').set_ref(0.0000).export('joint1_corrected.xml')
 ```
 
 The correction record is written to an XML file, the simulation reloads the corrected model, and the validation pipeline confirms the fault is eliminated before the result is accepted.
 
+The older `from opencad import Part` import remains as a compatibility facade, but new MJCF correction code should use `mjcf_correction` so it is not confused with the full OpenCAD package.
+
+SimCorrect can also consume the CAID design artifact exported by OpenCAD 0.1.1. The artifact gives the correction loop stable parameter names instead of forcing each problem script to infer values from ad hoc files.
+
+```python
+from opencad import apply_parameter_patch, load_artifact, make_patch_from_identification
+
+artifact = load_artifact("caid-design.json")
+patch = make_patch_from_identification(artifact, identification_result)
+corrected_artifact = apply_parameter_patch(artifact, patch)
+```
+
+The patch is structured JSON and can be sent back to OpenCAD to update named design parameters. If SimCorrect identifies an internal simulation target such as `link2_length`, the artifact can map it to a company-facing parameter such as `forearm_length` through a `kind="parameter"` simulation tag.
+
+Problem 1 now uses this path when `CAID_DESIGN_ARTIFACT` points at an OpenCAD artifact. Its pure helper lives in `Problem1_ForearmLength/caid_loop.py`, so the artifact-to-patch behavior can be tested without MuJoCo or rendering.
+
+The contract semantics are documented in [`docs/CAID_ARTIFACT_CONTRACT.md`](docs/CAID_ARTIFACT_CONTRACT.md).
+
 ---
 
 ## Installation
 
+For development and contract tests, see `CONTRIBUTING.md`.
+
 ```bash
 git clone https://github.com/caid-technologies/SimCorrect.git
 cd SimCorrect
-conda create -n simcorrect python=3.10
-conda activate simcorrect
-pip install mujoco numpy pillow imageio[ffmpeg]
+uv sync
+uv sync --extra demo  # required for MuJoCo render demos
 ```
 
 ---
@@ -94,20 +113,22 @@ pip install mujoco numpy pillow imageio[ffmpeg]
 
 ```bash
 cd Problem5_ToolMassMismatch
-python step0.py
-python demo.py
-python render_demo.py
+uv run --project .. python step0.py
+uv run --project .. python demo.py
+uv run --project .. python render_demo.py
 ```
 
 ---
 
 ## Repository Structure
 
-The repository is organized into five self-contained problem folders, each representing one fault scenario. A shared OpenCAD module lives at the root and is imported by all five problems. Every problem folder follows the same structure.
+The repository is organized into five self-contained problem folders, each representing one fault scenario. Shared contract and MJCF correction helpers live at the root. Every problem folder follows the same structure.
 
 ```text
 SimCorrect/
-├── opencad.py
+├── caid_contract.py
+├── mjcf_correction.py
+├── opencad.py              # compatibility facade
 ├── Problem1_ForearmLength/
 │   ├── render_demo.py
 │   ├── sim_pair.py

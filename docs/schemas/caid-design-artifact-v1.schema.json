@@ -1,0 +1,126 @@
+{
+  "$id": "https://caid-technologies.com/schemas/caid-design-artifact-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "artifact_id": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "feature_tree": {
+      "additionalProperties": true,
+      "properties": {
+        "nodes": {
+          "type": "object"
+        },
+        "root_id": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": ["root_id", "nodes"],
+      "type": "object"
+    },
+    "parameters": {
+      "additionalProperties": {
+        "$ref": "#/$defs/design_parameter"
+      },
+      "type": "object"
+    },
+    "producer": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "properties": {
+        "name": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "version": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": ["name", "version"],
+      "type": "object"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "simulation_tags": {
+      "items": {
+        "$ref": "#/$defs/simulation_tag"
+      },
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "artifact_id",
+    "producer",
+    "created_at",
+    "feature_tree",
+    "parameters",
+    "simulation_tags"
+  ],
+  "title": "CAID Design Artifact v1",
+  "type": "object",
+  "$defs": {
+    "design_parameter": {
+      "additionalProperties": false,
+      "properties": {
+        "feature_id": {
+          "type": ["string", "null"]
+        },
+        "name": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "role": {
+          "type": ["string", "null"]
+        },
+        "unit": {
+          "type": ["string", "null"]
+        },
+        "value": {
+          "$ref": "#/$defs/parameter_value"
+        }
+      },
+      "required": ["name", "value"],
+      "type": "object"
+    },
+    "parameter_value": {
+      "anyOf": [
+        {"type": "boolean"},
+        {"type": "integer"},
+        {"type": "number"},
+        {"type": "string"}
+      ]
+    },
+    "simulation_tag": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": ["body", "joint", "geom", "site", "parameter"]
+        },
+        "metadata": {
+          "type": "object"
+        },
+        "name": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "target": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": ["name", "kind", "target"],
+      "type": "object"
+    }
+  }
+}

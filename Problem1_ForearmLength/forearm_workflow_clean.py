@@ -11,16 +11,17 @@ It is not a force-accurate grasp benchmark.
 
 import os
 import math
-import tempfile
 import numpy as np
 import mujoco
 import imageio.v3 as iio
 from PIL import Image, ImageDraw, ImageFont
+from paths import video_path
+from simcorrect_mujoco import load_model_from_xml
 
 W, H = 1600, 900
 FPS = 30
 DUR = 26.0
-OUT = os.path.expanduser("~/Desktop/video1_forearm_clean_workflow.mp4")
+OUT = str(video_path("video1_forearm_clean_workflow.mp4"))
 
 DT = 0.002
 BALL_R = 0.024
@@ -268,11 +269,7 @@ def build_model(corrected=False):
         xml = xml.replace(f'pos="{BAD_L2:.3f} 0 0"', f'pos="{GT_L2:.3f} 0 0"', 1)
         xml = xml.replace('material="right_bad"', 'material="right_fix"')
         xml = xml.replace(f'pos="{BAD_L1:.3f} 0 0"', f'pos="{GT_L1:.3f} 0 0"', 1)
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".xml", delete=False) as f:
-        f.write(xml)
-        p = f.name
-    model = mujoco.MjModel.from_xml_path(p)
-    os.unlink(p)
+    model = load_model_from_xml(xml)
     data = mujoco.MjData(model)
     return model, data
 

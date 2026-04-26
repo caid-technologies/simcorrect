@@ -8,8 +8,14 @@ Both log joint state trajectories for divergence detection.
 
 import mujoco
 import numpy as np
-import tempfile
-import os
+
+try:
+    from .paths import trajectories_path
+    from .trajectory_io import save_trajectories
+except ImportError:
+    from paths import trajectories_path
+    from trajectory_io import save_trajectories
+from simcorrect_mujoco import load_model_from_xml
 
 
 ROBOT_XML_TEMPLATE = """
@@ -47,12 +53,7 @@ def build_xml(params):
     return ROBOT_XML_TEMPLATE.format(**params)
 
 def make_model(params):
-    xml = build_xml(params)
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.xml', delete=False) as f:
-        f.write(xml)
-        tmp_path = f.name
-    model = mujoco.MjModel.from_xml_path(tmp_path)
-    os.unlink(tmp_path)
+    model = load_model_from_xml(build_xml(params))
     return model, mujoco.MjData(model)
 
 def sinusoidal_control(t):
@@ -100,6 +101,7 @@ if __name__ == "__main__":
     rmse = np.sqrt(np.mean((gt_js - fx_js) ** 2))
     print(f"\nJoint state RMSE between sims: {rmse:.6f} rad")
     print("Divergence confirmed." if rmse > 0 else "WARNING: No divergence detected")
-    np.save("/tmp/trajectories.npy", traj, allow_pickle=True)
-    print("Trajectories saved to /tmp/trajectories.npy")
+    output = trajectories_path()
+    save_trajectories(output, traj)
+    print(f"Trajectories saved to {output}")
     print("Phase 1 complete.")

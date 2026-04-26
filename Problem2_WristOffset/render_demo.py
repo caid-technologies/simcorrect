@@ -1,10 +1,12 @@
 """Video 2 — Wrist Lateral Offset. 4-joint arm, j4 clamped 17deg, OpenCAD correction pipeline."""
-import mujoco, numpy as np, tempfile, os, math
+import mujoco, numpy as np, os, math
 from PIL import Image, ImageDraw, ImageFont
 import imageio.v3 as iio
+from paths import video_path
+from simcorrect_mujoco import load_model_from_xml
 
 W,H=1920,1080; FPS=30; DUR=88
-OUT=os.path.expanduser("~/Desktop/Video2_WristDrift.mp4")
+OUT=str(video_path("Video2_WristDrift.mp4"))
 BL,BR=0,7; LA,RA=14,20; LG1,RG1=18,24
 GT_L1=0.34; GT_L2=0.30; GT_L3=0.12; GT_L4=0.10; EE_OFF=0.015
 WRIST_GT=0.000; WRIST_BAD=0.150
@@ -210,10 +212,7 @@ def build_xml(wy,rc):
 </mujoco>"""
 
 def build(wy=WRIST_BAD,rc="0.92 0.18 0.12 1"):
-    xml=build_xml(wy,rc)
-    with tempfile.NamedTemporaryFile(mode='w',suffix='.xml',delete=False) as f:
-        f.write(xml); p=f.name
-    m=mujoco.MjModel.from_xml_path(p); os.unlink(p)
+    m=load_model_from_xml(build_xml(wy,rc))
     assert m.jnt_qposadr[0]==BL and m.jnt_qposadr[1]==BR
     assert m.jnt_qposadr[2]==LA and m.jnt_qposadr[8]==RA
     assert m.jnt_qposadr[6]==LG1 and m.jnt_qposadr[12]==RG1

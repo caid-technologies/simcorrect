@@ -1,11 +1,13 @@
 """Video 4 — Joint Zero Offset. Hinge curling fingers wrap around can, dramatic swing."""
-import mujoco, numpy as np, tempfile, os
+import mujoco, numpy as np, os
 from PIL import Image, ImageDraw, ImageFont
 import imageio.v3 as iio
+from paths import output_dir, video_path
+from simcorrect_mujoco import load_model_from_xml
 from opencad import Part, Sketch
 
 W,H=1920,1080; FPS=30; DUR=88
-OUT=os.path.expanduser("~/Desktop/Video4_BaseRotation.mp4")
+OUT=str(video_path("Video4_BaseRotation.mp4"))
 GT_L1=0.34; GT_L2=0.30; GT_L3=0.12; GT_L4=0.10; EE_OFF=0.015
 J1_REF_BAD=0.1396; J1_REF_GT=0.0000
 ARM_L_Y=-0.55; ARM_R_Y=0.55; BASE_Z=0.66
@@ -299,10 +301,7 @@ def build_xml(j1ref_r, rc):
 </mujoco>"""
 
 def build(j1ref_r=J1_REF_BAD, rc="0.92 0.18 0.12 1"):
-    xml=build_xml(j1ref_r,rc)
-    with tempfile.NamedTemporaryFile(mode='w',suffix='.xml',delete=False) as f:
-        f.write(xml); p=f.name
-    m=mujoco.MjModel.from_xml_path(p); os.unlink(p)
+    m=load_model_from_xml(build_xml(j1ref_r,rc))
     return m,mujoco.MjData(m)
 
 def get_adr(m,name):
@@ -458,7 +457,7 @@ def _result(ov,cx,cy,success,l1,l2):
     if l2: ov.text((cx-198,cy+4),l2,font=fnt(15),fill=(100,148,115) if success else (158,115,75))
 
 def main():
-    SNAP_DIR=os.path.expanduser("~/simcorrect/Problem4_JointZeroOffset/output")
+    SNAP_DIR=str(output_dir())
     os.makedirs(SNAP_DIR,exist_ok=True)
     snaps={2.0:"01_title.png",17.0:"02_rotational_miss.png",62.0:"04_corrected.png",82.0:"05_both_placed.png"}
     snaps_saved=set()

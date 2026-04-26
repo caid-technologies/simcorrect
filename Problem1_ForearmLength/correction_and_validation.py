@@ -6,14 +6,23 @@ Reruns simulation and validates convergence.
 Plots before vs after.
 """
 
+import json
+import os
+
+import matplotlib.gridspec as gridspec
+import matplotlib.pyplot as plt
 import mujoco
 import numpy as np
-import tempfile
-import os
-import json
-import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
-from opencad import Part, Sketch
+
+try:
+    from .caid_loop import correct_params_from_artifact
+    from .paths import correction_plot_path, identification_result_path, trajectories_path
+    from .trajectory_io import load_trajectories
+except ImportError:
+    from caid_loop import correct_params_from_artifact
+    from paths import correction_plot_path, identification_result_path, trajectories_path
+    from trajectory_io import load_trajectories
+from simcorrect_mujoco import load_model_from_xml
 
 ROBOT_XML_TEMPLATE = """
 <mujoco model="simple_arm">
@@ -45,11 +54,7 @@ def sinusoidal_control(t):
     return np.array([0.4 * np.sin(2.0 * t), 0.3 * np.sin(1.5 * t + 0.5)])
 
 def make_model(params):
-    xml = ROBOT_XML_TEMPLATE.format(**params)
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.xml', delete=False) as f:
-        f.write(xml); tmp_path = f.name
-    model = mujoco.MjModel.from_xml_path(tmp_path)
-    os.unlink(tmp_path)
+    model = load_model_from_xml(ROBOT_XML_TEMPLATE.format(**params))
     return model, mujoco.MjData(model)
 
 def run_simulation(params, duration=3.0, log_hz=100.0):
@@ -69,7 +74,7 @@ def run_simulation(params, duration=3.0, log_hz=100.0):
             ee_log.append(data.site_xpos[ee_id].copy())
     return np.array(times), np.array(log), np.array(ee_log)
 
-def opencad_correction(identification_result, current_params):
+def opencad_correction(identification_result, current_params, artifact=None):
     """
     Use OpenCAD to apply the parameter correction.
     Records the correction in the feature tree for audit trail.
@@ -77,24 +82,22 @@ def opencad_correction(identification_result, current_params):
     param = identification_result["identified_parameter"]
     proposed_value = identification_result["proposed_value"]
 
+    if artifact is not None:
+        result = correct_params_from_artifact(artifact, identification_result, current_params)
+        print(f"\nOpenCAD correction:")
+        print(f"  Simulation parameter: {param}")
+        print(f"  Patch parameter:      {result.patch['parameter_patches'][0]['name']}")
+        print(f"  From: {current_params[param]:.5f}m")
+        print(f"  To:   {proposed_value:.5f}m")
+        print(f"  CAID artifact patch prepared.")
+        return result.corrected_params
+
     print(f"\nOpenCAD correction:")
     print(f"  Parameter: {param}")
     print(f"  From: {current_params[param]:.5f}m")
     print(f"  To:   {proposed_value:.5f}m")
 
-    # Use OpenCAD feature tree to record the correction
-    # This creates an auditable parametric history of the fix
-    arm_profile = (
-        Sketch(name="Arm Correction Record")
-        .rect(proposed_value * 100, 4)   # scaled for CAD units (cm)
-    )
-    Part(name=f"Corrected_{param}").extrude(
-        arm_profile,
-        depth=4,
-        name=f"Correction: {param} = {proposed_value:.4f}m"
-    )
-
-    print(f"  OpenCAD feature tree updated — correction logged.")
+    print("  CAID artifact not set; applying simulation parameter directly.")
 
     # Apply correction to simulation parameters
     corrected_params = current_params.copy()
@@ -105,7 +108,8 @@ def compute_rmse(a, b):
     return float(np.sqrt(np.mean((a - b) ** 2)))
 
 def plot_before_after(traj_gt, traj_before, traj_after, times, identification_result,
-                      save_path="/tmp/correction_validation.png"):
+                      save_path=None):
+    save_path = save_path or correction_plot_path()
     fig = plt.figure(figsize=(14, 10), facecolor="#0a0f14")
     gs  = gridspec.GridSpec(2, 2, hspace=0.45, wspace=0.35)
     style = {"axes.facecolor":"#0d1520","axes.edgecolor":"#1a2a3a","axes.labelcolor":"#7a9ab0",
@@ -172,15 +176,16 @@ if __name__ == "__main__":
     print("Phase 4 + 5: OpenCAD Correction and Validation")
 
     # Load data
-    traj = np.load("/tmp/trajectories.npy", allow_pickle=True).item()
-    with open("/tmp/identification_result.json") as f:
+    traj = load_trajectories(trajectories_path())
+    with identification_result_path().open(encoding="utf-8") as f:
         identification_result = json.load(f)
 
     faulty_params = {"link1_length": 0.30, "link2_length": 0.22}
     gt_params     = {"link1_length": 0.30, "link2_length": 0.25}
 
     # Phase 4 — OpenCAD correction
-    corrected_params = opencad_correction(identification_result, faulty_params)
+    artifact_path = os.environ.get("CAID_DESIGN_ARTIFACT")
+    corrected_params = opencad_correction(identification_result, faulty_params, artifact=artifact_path)
     print(f"\nCorrected params: {corrected_params}")
 
     # Phase 5 — Rerun simulation with corrected params

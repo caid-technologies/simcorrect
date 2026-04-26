@@ -9,9 +9,11 @@ Full closed-loop pipeline:
   5. Corrected sim      -- validate fault eliminated
   6. Assertions         -- all pass criteria verified
 """
-import mujoco, numpy as np, inspect, sys, os
-sys.path.insert(0, os.path.expanduser("~/simcorrect"))
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import inspect
+import mujoco
+import numpy as np
+
+from paths import corrected_grip_xml_path
 from render_demo import (build, HOME_Q, PICK_Q, PICK_Q_F, LIFT_Q,
                           SAG_J2, SAG_J4, SAG_MM,
                           CAN_L, CAN_R, TABLE_L, TABLE_R,
@@ -80,13 +82,13 @@ def validate():
     actual_mass, delta_mass, corrections = identify(
         sag_full_mm=SAG_MM,
         sag_half_mm=SAG_MM * 0.5,
-        model_mass=MASS_MODEL,
-        export_path="/tmp/grip_corrected.xml")
+        model_mass=MASS_MODEL)
 
     # Phase 4: OpenCAD correction
     print("\n[4/5] OpenCAD correction...")
+    corrected_xml = corrected_grip_xml_path()
     part = Part("grip").set_mass(MASS_ACTUAL)
-    part.export("/tmp/grip_corrected.xml")
+    part.export(str(corrected_xml))
     print(f"  {part.report()}")
     print(f"  grip.inertial.mass: {MASS_MODEL:.3f} -> {MASS_ACTUAL:.3f} kg")
 

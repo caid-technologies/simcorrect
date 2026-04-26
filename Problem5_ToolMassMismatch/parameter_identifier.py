@@ -12,9 +12,9 @@ Physics:
 
 OpenCAD applies the correction to the MJCF model.
 """
-import sys, os, numpy as np
-sys.path.insert(0, os.path.expanduser("~/simcorrect"))
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import numpy as np
+
+from paths import corrected_grip_xml_path
 from opencad import Part
 
 G          = 9.81
@@ -25,7 +25,9 @@ REACH_HALF = 0.375
 
 def identify(sag_full_mm, sag_half_mm, model_mass,
              reach_full=REACH_FULL, reach_half=REACH_HALF,
-             export_path="/tmp/grip_corrected.xml"):
+             export_path=None):
+    if export_path is None:
+        export_path = corrected_grip_xml_path()
     print("=" * 55)
     print("SimCorrect -- Parameter Identifier")
     print("=" * 55)
@@ -54,7 +56,7 @@ def identify(sag_full_mm, sag_half_mm, model_mass,
 
     print(f"\n  Applying OpenCAD correction...")
     part = Part("grip").set_mass(actual_mass)
-    part.export(export_path)
+    part.export(str(export_path))
     print(f"  {part.report()}")
     print(f"  Corrected XML written to: {export_path}")
 

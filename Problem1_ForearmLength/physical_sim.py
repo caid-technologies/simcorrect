@@ -1,12 +1,13 @@
 import os
-import tempfile
 import mujoco
 import numpy as np
 import imageio.v3 as iio
+from paths import video_path
+from simcorrect_mujoco import load_model_from_xml
 
 W,H=1600,900
 FPS=30
-OUT=os.path.expanduser("~/Desktop/video1_corl_physical.mp4")
+OUT=str(video_path("video1_corl_physical.mp4"))
 
 XML = """
 <mujoco model="corl_demo">
@@ -74,11 +75,7 @@ XML = """
 
 def main():
 
-    with tempfile.NamedTemporaryFile(delete=False,suffix=".xml") as f:
-        f.write(XML.encode())
-        xml=f.name
-
-    model=mujoco.MjModel.from_xml_path(xml)
+    model=load_model_from_xml(XML)
     data=mujoco.MjData(model)
 
     renderer=mujoco.Renderer(model,width=W,height=H)

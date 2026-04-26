@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - feature/**
+
+jobs:
+  tests:
+    name: Contract Tests
+    runs-on: windows-latest
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - uses: astral-sh/setup-uv@v5
+      - name: Sync locked environment
+        run: uv sync --locked --extra test
+      - name: Run contract tests
+        run: uv run --no-sync python -m unittest discover -s tests
+      - name: Run package import smoke checks
+        run: >
+          uv run --no-sync python -c
+          "import caid_contract, mjcf_correction, opencad, simcorrect_mujoco, simcorrect_paths;
+          import Problem1_ForearmLength.caid_loop;
+          import Problem2_WristOffset.paths"
+      - name: Compile Python modules
+        run: >
+          uv run --no-sync python -m compileall -q
+          caid_contract.py
+          mjcf_correction.py
+          opencad.py
+          simcorrect_mujoco.py
+          simcorrect_paths.py
+          Problem1_ForearmLength
+          Problem2_WristOffset
+          Problem3_JointFriction
+          Problem4_JointZeroOffset
+          Problem5_ToolMassMismatch
+          tests
