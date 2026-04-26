@@ -132,9 +132,9 @@ The physics simulation uses MuJoCo 3.x. CAD correction uses the OpenCAD API. Div
 
 ## Authors
 
-Shreya Priya is a robotics and autonomy engineer focused on simulation-to-real transfer and autonomous correction pipelines.
+Shreya Priya is a robotics and autonomy lead focused on simulation-to-real transfer and autonomous correction pipelines.
 
-Dean (Dien) Hu is a contributor to SimCorrect and the author of OpenCAD.
+Dien (Dean) Hu is a contributor to SimCorrect and the author of OpenCAD.
 
 ---
 
